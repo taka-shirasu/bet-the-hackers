@@ -9,16 +9,11 @@
 
 * {
   box-sizing: border-box;
-  scrollbar-width: none;
-}
-*::-webkit-scrollbar {
-  display: none;
 }
 
 html,
 body {
   min-height: 100%;
-  overflow: hidden;
 }
 
 body {
@@ -363,6 +358,10 @@ h1 {
   animation: slide-up 250ms ease-out;
   overflow-y: auto;
   max-height: 55vh;
+  scrollbar-width: none;
+}
+.card-body-expandable::-webkit-scrollbar {
+  display: none;
 }
 
 @keyframes slide-up {
@@ -908,9 +907,13 @@ h1 {
   margin: auto;
   max-height: 85vh;
   max-width: 560px;
+  scrollbar-width: none;
   overflow-y: auto;
   padding: 32px;
   width: 95%;
+}
+.bet-screen::-webkit-scrollbar {
+  display: none;
 }
 
 .bet-screen-header {
@@ -1130,6 +1133,10 @@ h1 {
   max-height: 380px;
   overflow-y: auto;
   padding: 12px;
+  scrollbar-width: none;
+}
+.leaderboard-entries::-webkit-scrollbar {
+  display: none;
 }
 
 .leaderboard-entry {
