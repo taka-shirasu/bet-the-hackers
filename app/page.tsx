@@ -233,59 +233,54 @@ function nudgeScore(team: TeamProfile, direction: "left" | "right"): TeamProfile
 /*  Gauge meter component                                              */
 /* ------------------------------------------------------------------ */
 
-let gaugeIdCounter = 0;
+let ringIdCounter = 0;
 
-function GaugeMeter({ label, value }: { label: string; value: number }) {
-  const [gradId] = useState(() => `gauge-grad-${gaugeIdCounter++}`);
-  const cx = 60;
-  const cy = 58;
-  const midR = 43;
-  const strokeW = 14;
-
-  const needleAngle = 180 - (value / 100) * 180;
-  const rad = (needleAngle * Math.PI) / 180;
-  const needleLen = midR - 4;
-  const nx = cx + needleLen * Math.cos(rad);
-  const ny = cy - needleLen * Math.sin(rad);
-
-  // Semi-circle arc from left (180°) to right (0°)
-  const x1 = cx - midR;
-  const x2 = cx + midR;
+function RingMeter({ label, value }: { label: string; value: number }) {
+  const [gradId] = useState(() => `ring-grad-${ringIdCounter++}`);
+  const size = 100;
+  const strokeW = 10;
+  const r = (size - strokeW) / 2;
+  const cx = size / 2;
+  const cy = size / 2;
+  const circumference = 2 * Math.PI * r;
+  const filled = circumference * (value / 100);
+  const gap = circumference - filled;
 
   return (
-    <div className="gauge">
-      <svg viewBox="0 0 120 68" className="gauge-svg">
+    <div className="ring-meter">
+      <svg viewBox={`0 0 ${size} ${size}`} className="ring-svg">
         <defs>
-          <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#e74c3c" />
-            <stop offset="35%" stopColor="#f39c12" />
-            <stop offset="55%" stopColor="#f1c40f" />
-            <stop offset="80%" stopColor="#2ecc71" />
-            <stop offset="100%" stopColor="#27ae60" />
+          <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#60cfff" />
+            <stop offset="100%" stopColor="#1a56db" />
           </linearGradient>
         </defs>
-        <path
-          d={`M${x1},${cy} A${midR},${midR} 0 0 1 ${x2},${cy}`}
+        <circle
+          cx={cx}
+          cy={cy}
+          r={r}
+          fill="none"
+          stroke="rgba(255,255,255,0.15)"
+          strokeWidth={strokeW}
+        />
+        <circle
+          cx={cx}
+          cy={cy}
+          r={r}
           fill="none"
           stroke={`url(#${gradId})`}
           strokeWidth={strokeW}
           strokeLinecap="round"
+          strokeDasharray={`${filled} ${gap}`}
+          className="ring-progress"
+          style={{ "--ring-circumference": `${circumference}` } as React.CSSProperties}
+          transform={`rotate(-90 ${cx} ${cy})`}
         />
-        <line
-          x1={cx}
-          y1={cy}
-          x2={nx}
-          y2={ny}
-          stroke="#111"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          className="gauge-needle"
-          style={{ "--needle-angle": `${180 - needleAngle}deg` } as React.CSSProperties}
-        />
-        <circle cx={cx} cy={cy} r="5" fill="#111" />
       </svg>
-      <div className="gauge-label">{label}</div>
-      <div className="gauge-value">{value}%</div>
+      <div className="ring-center">
+        <span className="ring-value">{value}%</span>
+      </div>
+      <div className="ring-label">{label}</div>
     </div>
   );
 }
@@ -683,10 +678,10 @@ function TeamCard({
             loop
             playsInline
           />
-          <div className="video-gauges">
-            <GaugeMeter label="Competitiveness" value={team.competitiveness} />
-            <GaugeMeter label="Alignment" value={team.alignment} />
-            <GaugeMeter label="Marketability" value={team.marketability} />
+          <div className="video-rings">
+            <RingMeter label="Competitiveness" value={team.competitiveness} />
+            <RingMeter label="Alignment" value={team.alignment} />
+            <RingMeter label="Marketability" value={team.marketability} />
           </div>
           <div className="video-overlay">
             <h2 className="video-team-name">{team.name}</h2>
