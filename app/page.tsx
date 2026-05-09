@@ -420,10 +420,16 @@ export default function Home() {
       return;
     }
 
-    // Always show bet screen (even with 1 survivor) so user can place/change bets
     setSurvivors(nextSurvivors);
     setEliminated(nextEliminated);
-    setShowBetScreen(true);
+
+    if (round === 1) {
+      // Show bet screen only in Round 1
+      setShowBetScreen(true);
+    } else {
+      // Round 2 — skip betting, go straight to leaderboard
+      setShowLeaderboard(true);
+    }
   }
 
   function advanceToNextRound() {
