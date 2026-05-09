@@ -260,7 +260,7 @@ function RingMeter({ label, value }: { label: string; value: number }) {
           cy={cy}
           r={r}
           fill="none"
-          stroke="rgba(255,255,255,0.15)"
+          stroke="rgba(255,255,255,0.3)"
           strokeWidth={strokeW}
         />
         <circle
@@ -271,9 +271,12 @@ function RingMeter({ label, value }: { label: string; value: number }) {
           stroke={`url(#${gradId})`}
           strokeWidth={strokeW}
           strokeLinecap="round"
-          strokeDasharray={`${filled} ${gap}`}
           className="ring-progress"
-          style={{ "--ring-circumference": `${circumference}` } as React.CSSProperties}
+          style={{
+            "--ring-filled": `${filled}`,
+            "--ring-gap": `${gap}`,
+            "--ring-circ": `${circumference}`,
+          } as React.CSSProperties}
           transform={`rotate(-90 ${cx} ${cy})`}
         />
         <text

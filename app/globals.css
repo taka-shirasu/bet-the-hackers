@@ -399,12 +399,13 @@ h1 {
 }
 
 .ring-progress {
-  animation: ring-fill 1.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  stroke-dasharray: 0 var(--ring-circumference);
+  stroke-dasharray: var(--ring-filled) var(--ring-gap);
+  stroke-dashoffset: 0;
+  animation: ring-fill 1.4s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @keyframes ring-fill {
-  to { stroke-dasharray: inherit; }
+  from { stroke-dasharray: 0 var(--ring-circ); }
 }
 
 .ring-value-text {
