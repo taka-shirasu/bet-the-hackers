@@ -233,38 +233,44 @@ function nudgeScore(team: TeamProfile, direction: "left" | "right"): TeamProfile
 /*  Gauge meter component                                              */
 /* ------------------------------------------------------------------ */
 
+let gaugeIdCounter = 0;
+
 function GaugeMeter({ label, value }: { label: string; value: number }) {
-  const r = 50;
+  const [gradId] = useState(() => `gauge-grad-${gaugeIdCounter++}`);
   const cx = 60;
   const cy = 58;
-  const startAngle = 180;
-  const endAngle = 0;
-  const sweep = startAngle - endAngle;
-  const needleAngle = startAngle - (value / 100) * sweep;
-  const rad = (needleAngle * Math.PI) / 180;
-  const nx = cx + (r - 6) * Math.cos(rad);
-  const ny = cy - (r - 6) * Math.sin(rad);
+  const midR = 43;
+  const strokeW = 14;
 
-  const arcPath = (innerR: number, outerR: number, from: number, to: number) => {
-    const r1 = (from * Math.PI) / 180;
-    const r2 = (to * Math.PI) / 180;
-    const x1o = cx + outerR * Math.cos(r1);
-    const y1o = cy - outerR * Math.sin(r1);
-    const x2o = cx + outerR * Math.cos(r2);
-    const y2o = cy - outerR * Math.sin(r2);
-    const x2i = cx + innerR * Math.cos(r2);
-    const y2i = cy - innerR * Math.sin(r2);
-    const x1i = cx + innerR * Math.cos(r1);
-    const y1i = cy - innerR * Math.sin(r1);
-    return `M${x1o},${y1o} A${outerR},${outerR} 0 0 0 ${x2o},${y2o} L${x2i},${y2i} A${innerR},${innerR} 0 0 1 ${x1i},${y1i} Z`;
-  };
+  const needleAngle = 180 - (value / 100) * 180;
+  const rad = (needleAngle * Math.PI) / 180;
+  const needleLen = midR - 4;
+  const nx = cx + needleLen * Math.cos(rad);
+  const ny = cy - needleLen * Math.sin(rad);
+
+  // Semi-circle arc from left (180°) to right (0°)
+  const x1 = cx - midR;
+  const x2 = cx + midR;
 
   return (
     <div className="gauge">
       <svg viewBox="0 0 120 68" className="gauge-svg">
-        <path d={arcPath(36, r, 180, 120)} fill="#e74c3c" />
-        <path d={arcPath(36, r, 120, 60)} fill="#f1c40f" />
-        <path d={arcPath(36, r, 60, 0)} fill="#2ecc71" />
+        <defs>
+          <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#e74c3c" />
+            <stop offset="35%" stopColor="#f39c12" />
+            <stop offset="55%" stopColor="#f1c40f" />
+            <stop offset="80%" stopColor="#2ecc71" />
+            <stop offset="100%" stopColor="#27ae60" />
+          </linearGradient>
+        </defs>
+        <path
+          d={`M${x1},${cy} A${midR},${midR} 0 0 1 ${x2},${cy}`}
+          fill="none"
+          stroke={`url(#${gradId})`}
+          strokeWidth={strokeW}
+          strokeLinecap="round"
+        />
         <line
           x1={cx}
           y1={cy}
@@ -276,7 +282,7 @@ function GaugeMeter({ label, value }: { label: string; value: number }) {
           className="gauge-needle"
           style={{ "--needle-angle": `${180 - needleAngle}deg` } as React.CSSProperties}
         />
-        <circle cx={cx} cy={cy} r="4" fill="#111" />
+        <circle cx={cx} cy={cy} r="5" fill="#111" />
       </svg>
       <div className="gauge-label">{label}</div>
       <div className="gauge-value">{value}%</div>
