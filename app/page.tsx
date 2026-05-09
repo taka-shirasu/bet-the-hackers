@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState } from "react";
 import {
   ArrowRight,
   BadgeCheck,
@@ -216,8 +216,7 @@ export default function Home() {
     potentialPayout: 0,
     bets: [],
   });
-  const [showBetModal, setShowBetModal] = useState(false);
-  const [pendingTeam, setPendingTeam] = useState<TeamProfile | null>(null);
+  const [showBetScreen, setShowBetScreen] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
 
   const active = roundTeams[index];
@@ -244,10 +243,10 @@ export default function Home() {
       return;
     }
 
-    // Show leaderboard between rounds
-    setShowLeaderboard(true);
+    // Show bet screen with all liked teams before leaderboard
     setSurvivors(nextSurvivors);
     setEliminated(nextEliminated);
+    setShowBetScreen(true);
   }
 
   function advanceToNextRound() {
@@ -267,23 +266,18 @@ export default function Home() {
     );
     setRoundTeams(updatedTeams);
 
-    if (choice === "right") {
-      // Intercept right swipe: show bet modal
-      setPendingTeam(updatedTeams.find((t) => t.id === active.id)!);
-      setShowBetModal(true);
-      return;
-    }
-
-    // Left swipe: animate and advance
     setDirection(choice);
     window.setTimeout(() => {
-      const nextEliminated = [active, ...eliminated];
+      const updatedActive = updatedTeams.find((t) => t.id === active.id)!;
+      const nextSurvivors = choice === "right" ? [...survivors, updatedActive] : survivors;
+      const nextEliminated = choice === "left" ? [active, ...eliminated] : eliminated;
       const lastCard = index === roundTeams.length - 1;
 
       if (lastCard) {
-        finishPick(survivors, nextEliminated);
+        finishPick(nextSurvivors, nextEliminated);
       } else {
-        setEliminated(nextEliminated);
+        if (choice === "right") setSurvivors(nextSurvivors);
+        else setEliminated(nextEliminated);
         setIndex((current) => current + 1);
       }
 
@@ -291,59 +285,24 @@ export default function Home() {
     }, 250);
   }
 
-  const placeBet = useCallback(
-    (amount: number) => {
-      if (!pendingTeam) return;
-      if (amount > portfolio.credits) return;
+  function confirmBets(bets: Bet[]) {
+    const totalSpent = bets.reduce((sum, b) => sum + b.amount, 0);
+    const totalPayout = bets.reduce((sum, b) => sum + b.potentialPayout, 0);
 
-      const payout = calculatePayout(amount, pendingTeam.winScore);
-      const bet: Bet = {
-        id: `bet-${Date.now()}`,
-        userId: "user-current",
-        teamId: pendingTeam.id,
-        teamName: pendingTeam.name,
-        amount,
-        potentialPayout: payout,
-        winProbability: pendingTeam.winScore / 100,
-        createdAt: new Date().toISOString(),
-      };
+    setPortfolio((prev) => ({
+      credits: prev.credits - totalSpent,
+      totalSpent: prev.totalSpent + totalSpent,
+      potentialPayout: prev.potentialPayout + totalPayout,
+      bets: [...prev.bets, ...bets],
+    }));
 
-      setPortfolio((prev) => ({
-        credits: prev.credits - amount,
-        totalSpent: prev.totalSpent + amount,
-        potentialPayout: prev.potentialPayout + payout,
-        bets: [...prev.bets, bet],
-      }));
-
-      completeRightSwipe();
-    },
-    [pendingTeam, portfolio.credits],
-  );
-
-  function skipBet() {
-    completeRightSwipe();
+    setShowBetScreen(false);
+    setShowLeaderboard(true);
   }
 
-  function completeRightSwipe() {
-    if (!pendingTeam) return;
-
-    setShowBetModal(false);
-    setDirection("right");
-
-    window.setTimeout(() => {
-      const nextSurvivors = [...survivors, pendingTeam];
-      const lastCard = index === roundTeams.length - 1;
-
-      if (lastCard) {
-        finishPick(nextSurvivors, eliminated);
-      } else {
-        setSurvivors(nextSurvivors);
-        setIndex((current) => current + 1);
-      }
-
-      setDirection(null);
-      setPendingTeam(null);
-    }, 250);
+  function skipAllBets() {
+    setShowBetScreen(false);
+    setShowLeaderboard(true);
   }
 
   function reset() {
@@ -360,8 +319,7 @@ export default function Home() {
       potentialPayout: 0,
       bets: [],
     });
-    setShowBetModal(false);
-    setPendingTeam(null);
+    setShowBetScreen(false);
     setShowLeaderboard(false);
   }
 
@@ -431,7 +389,7 @@ export default function Home() {
               className="round-button pass"
               onClick={() => swipe("left")}
               aria-label="Pass on this team"
-              disabled={Boolean(winner) || showBetModal}
+              disabled={Boolean(winner) || showBetScreen}
             >
               <X size={30} />
             </button>
@@ -439,7 +397,7 @@ export default function Home() {
               className="round-button like"
               onClick={() => swipe("right")}
               aria-label="Advance this team"
-              disabled={Boolean(winner) || showBetModal}
+              disabled={Boolean(winner) || showBetScreen}
             >
               <Heart size={30} />
             </button>
@@ -475,13 +433,13 @@ export default function Home() {
         </aside>
       </section>
 
-      {/* Bet modal overlay */}
-      {showBetModal && pendingTeam && (
-        <BetModal
-          team={pendingTeam}
+      {/* Bet placement screen (after swiping all cards) */}
+      {showBetScreen && (
+        <BetScreen
+          teams={survivors}
           credits={portfolio.credits}
-          onBet={placeBet}
-          onSkip={skipBet}
+          onConfirm={confirmBets}
+          onSkip={skipAllBets}
         />
       )}
 
@@ -647,84 +605,134 @@ function WinnerCard({
 }
 
 /* ------------------------------------------------------------------ */
-/*  Bet modal (bottom sheet)                                           */
+/*  Bet screen (full-screen after all swipes)                          */
 /* ------------------------------------------------------------------ */
 
-function BetModal({
-  team,
+function BetScreen({
+  teams,
   credits,
-  onBet,
+  onConfirm,
   onSkip,
 }: {
-  team: TeamProfile;
+  teams: TeamProfile[];
   credits: number;
-  onBet: (amount: number) => void;
+  onConfirm: (bets: Bet[]) => void;
   onSkip: () => void;
 }) {
-  const maxBet = Math.min(credits, 500);
-  const [amount, setAmount] = useState(Math.min(50, maxBet));
-  const payout = useMemo(
-    () => calculatePayout(amount, team.winScore),
-    [amount, team.winScore],
+  const [amounts, setAmounts] = useState<Record<number, number>>(
+    () => Object.fromEntries(teams.map((t) => [t.id, 0])),
   );
 
+  const totalAllocated = Object.values(amounts).reduce((s, v) => s + v, 0);
+  const remaining = credits - totalAllocated;
+
+  function updateAmount(teamId: number, value: number) {
+    setAmounts((prev) => {
+      const otherTotal = Object.entries(prev)
+        .filter(([id]) => Number(id) !== teamId)
+        .reduce((s, [, v]) => s + v, 0);
+      const capped = Math.min(value, credits - otherTotal);
+      return { ...prev, [teamId]: Math.max(0, capped) };
+    });
+  }
+
+  function handleConfirm() {
+    const bets: Bet[] = teams
+      .filter((t) => amounts[t.id] > 0)
+      .map((t) => ({
+        id: `bet-${Date.now()}-${t.id}`,
+        userId: "user-current",
+        teamId: t.id,
+        teamName: t.name,
+        amount: amounts[t.id],
+        potentialPayout: calculatePayout(amounts[t.id], t.winScore),
+        winProbability: t.winScore / 100,
+        createdAt: new Date().toISOString(),
+      }));
+    onConfirm(bets);
+  }
+
   return (
-    <div className="modal-backdrop" onClick={onSkip}>
-      <div className="bet-sheet" onClick={(e) => e.stopPropagation()}>
-        <div className="bet-sheet-handle" />
-        <div className="bet-sheet-header">
-          <h3>Place your bet</h3>
-          <p>
-            {team.name} — {team.winScore}% win probability
-          </p>
+    <div className="modal-backdrop">
+      <div className="bet-screen">
+        <div className="bet-screen-header">
+          <Coins size={24} />
+          <h2>Place your bets</h2>
+          <p>You liked {teams.length} team{teams.length > 1 ? "s" : ""}. Allocate credits to bet on who will win.</p>
         </div>
 
-        <div className="bet-credits-display">
-          <span>Your credits</span>
-          <strong>{credits.toLocaleString()}</strong>
-        </div>
-
-        <div className="bet-slider-section">
-          <div className="bet-slider-header">
-            <span>Bet amount</span>
-            <strong className="bet-amount-value">{amount}</strong>
+        <div className="bet-screen-credits">
+          <div>
+            <span>Available</span>
+            <strong>{remaining.toLocaleString()}</strong>
           </div>
-          <input
-            type="range"
-            min={10}
-            max={maxBet}
-            step={10}
-            value={amount}
-            onChange={(e) => setAmount(Number(e.target.value))}
-            className="bet-slider"
-          />
-          <div className="bet-slider-range">
-            <span>10</span>
-            <span>{maxBet}</span>
+          <div>
+            <span>Allocated</span>
+            <strong>{totalAllocated.toLocaleString()}</strong>
+          </div>
+          <div>
+            <span>Total payout</span>
+            <strong style={{ color: "#12b886" }}>
+              +{teams
+                .filter((t) => amounts[t.id] > 0)
+                .reduce((s, t) => s + calculatePayout(amounts[t.id], t.winScore), 0)
+                .toLocaleString()}
+            </strong>
           </div>
         </div>
 
-        <div className="bet-payout-display">
-          <span>Potential payout</span>
-          <strong>+{payout.toLocaleString()}</strong>
+        <div className="bet-screen-list">
+          {teams.map((team) => {
+            const amt = amounts[team.id];
+            const payout = amt > 0 ? calculatePayout(amt, team.winScore) : 0;
+            const maxForTeam = Math.min(remaining + amt, 500);
+            return (
+              <div className="bet-screen-team" key={team.id}>
+                <div className="bet-screen-team-info">
+                  <span className="bet-screen-color" style={{ backgroundColor: team.color }} />
+                  <div>
+                    <strong>{team.name}</strong>
+                    <small>{team.winScore}% win probability</small>
+                  </div>
+                  {team.totalBettors > 0 && (
+                    <span className="bet-screen-social">
+                      {team.totalBettors} bettor{team.totalBettors > 1 ? "s" : ""}
+                    </span>
+                  )}
+                </div>
+                <div className="bet-screen-slider-row">
+                  <input
+                    type="range"
+                    min={0}
+                    max={maxForTeam}
+                    step={10}
+                    value={amt}
+                    onChange={(e) => updateAmount(team.id, Number(e.target.value))}
+                    className="bet-slider"
+                  />
+                  <div className="bet-screen-amounts">
+                    <strong className="bet-amount-value">{amt}</strong>
+                    {payout > 0 && (
+                      <small style={{ color: "#12b886" }}>+{payout.toLocaleString()}</small>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
-
-        {team.totalBettors > 0 && (
-          <p className="bet-social-line">
-            {team.totalBettors} other{team.totalBettors > 1 ? "s" : ""} bet on this team
-          </p>
-        )}
 
         <div className="bet-actions">
           <button className="bet-action-skip" onClick={onSkip}>
-            Skip bet
+            Skip betting
           </button>
           <button
             className="bet-action-confirm"
-            onClick={() => onBet(amount)}
-            disabled={amount <= 0 || amount > credits}
+            onClick={handleConfirm}
+            disabled={totalAllocated === 0}
           >
-            Confirm bet
+            Confirm {Object.values(amounts).filter((v) => v > 0).length} bet
+            {Object.values(amounts).filter((v) => v > 0).length !== 1 ? "s" : ""}
           </button>
         </div>
       </div>
