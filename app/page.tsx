@@ -410,13 +410,8 @@ export default function Home() {
   );
 
   function finishPick(nextSurvivors: TeamProfile[], nextEliminated: TeamProfile[]) {
-    if (nextSurvivors.length === 1) {
-      setWinner(nextSurvivors[0]);
-      setEliminated(nextEliminated);
-      return;
-    }
-
     if (nextSurvivors.length === 0) {
+      // Nobody liked — fallback to best winScore
       const fallback = roundTeams
         .slice()
         .sort((a, b) => b.winScore - a.winScore)[0];
@@ -425,7 +420,7 @@ export default function Home() {
       return;
     }
 
-    // Show bet screen with all liked teams before leaderboard
+    // Always show bet screen (even with 1 survivor) so user can place/change bets
     setSurvivors(nextSurvivors);
     setEliminated(nextEliminated);
     setShowBetScreen(true);
