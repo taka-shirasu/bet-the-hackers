@@ -513,6 +513,11 @@ export default function Home() {
     setShowLeaderboard(false);
     setTeamBetTotals({});
     setRound1Winner(null);
+
+    // Clear dashboard localStorage
+    localStorage.removeItem("hackbet_winner");
+    localStorage.removeItem("hackbet_portfolio");
+    localStorage.removeItem("hackbet_team_totals");
   }
 
   return (
