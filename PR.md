@@ -19,8 +19,44 @@
 - Collecting data
 - Winner - betting dashboard (who bet on what)
 - Agentic dashboard - relationship
+- Account
 
 # Data entry form
 - Paricipents (project description, team name, linkedIn profile, Track - category, Insights - why they are working on it)
-- Judge (linkedin profile)
-- Competition requirement 
+- Judge (linkedin profile)and Competition requirement 
+
+# Theme
+- white backgounrd
+- black text
+- orange #F97316
+
+# Parameters
+- Overall winnerbilty
+- Competitivness among other participents: compare with other participents and reason why they can win
+- Likelyhood of judge picking the winner: see who are the judge and see if they will pick
+- Marketblity: is what they are trying to do have a market and scale big?
+
+# Tehc stack role 
+
+MongoDB/Prisma
+→ raw team submissions
+→ hackathon judges
+→ judging criteria
+→ cached final scores for UI
+
+Apify
+→ scrape public LinkedIn/profile data
+→ scrape judge linkedin pages
+→ scrape market/competitor pages
+
+Nia
+→ deep judge/market research
+
+Hyperspell
+→ memory/evidence layer
+→ stores cleaned Apify output, Nia findings, judge KB, market KB, team evidence
+
+Agents
+→ read Hyperspell
+→ score competitiveness, judge fit, marketability
+→ write final scores back to MongoDB

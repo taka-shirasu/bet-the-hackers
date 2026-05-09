@@ -705,6 +705,40 @@ h1 {
   grid-template-columns: minmax(120px, 1fr) minmax(180px, 1.6fr) auto;
 }
 
+.judge-row {
+  align-items: center;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(120px, 1fr) minmax(120px, 1fr) minmax(180px, 1.6fr) auto;
+}
+
+.judge-row input {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--ink);
+  font: inherit;
+  padding: 12px 14px;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+  width: 100%;
+}
+
+.judge-row input:focus {
+  border-color: rgba(255, 68, 88, 0.55);
+  box-shadow: 0 0 0 3px rgba(255, 68, 88, 0.15);
+  outline: none;
+}
+
+@media (max-width: 720px) {
+  .judge-row {
+    grid-template-columns: 1fr 1fr auto;
+  }
+  .judge-row input[type="url"] {
+    grid-column: 1 / -1;
+    order: 3;
+  }
+}
+
 .icon-button {
   align-items: center;
   background: transparent;
