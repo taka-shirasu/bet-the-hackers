@@ -280,21 +280,9 @@ export default function Home() {
     setShowLeaderboard(false);
 
     if (round === 1) {
-      // Find the team the user bet on (Round 1 winner)
-      const betTeamIds = portfolio.bets.map((b) => b.teamId);
-      const r1Winner = survivors.find((t) => betTeamIds.includes(t.id)) ?? survivors[0];
-      setRound1Winner(r1Winner);
-
-      // Remove R1 winner from the pool for Round 2
-      const round2Teams = survivors.filter((t) => t.id !== r1Winner.id);
-
-      if (round2Teams.length === 0) {
-        setWinner(r1Winner);
-        return;
-      }
-
+      // Round 1 winner stays in the pool for Round 2
       setRound(2);
-      setRoundTeams(round2Teams);
+      setRoundTeams(survivors);
       setIndex(0);
       setSurvivors([]);
       setEliminated([]);
