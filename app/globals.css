@@ -248,6 +248,11 @@ h1 {
   overflow: hidden;
 }
 
+.video-wrap-compact {
+  flex: 0 0 45%;
+  border-radius: 8px 8px 0 0;
+}
+
 .card-expanded .video-wrap {
   display: none;
 }
@@ -259,12 +264,76 @@ h1 {
   object-fit: cover;
 }
 
+.video-wrap-compact::after {
+  display: none;
+}
+
 .video-wrap::after {
   background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.2) 40%, transparent 70%);
   content: "";
   inset: 0;
   position: absolute;
   pointer-events: none;
+}
+
+/* ---- Card info section (below video in Round 1) ---- */
+
+.card-info-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px 14px;
+  flex: 1;
+}
+
+.card-info-name {
+  font-size: 1.3rem;
+  font-weight: 800;
+  margin: 0;
+  text-align: center;
+}
+
+.card-info-desc {
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 500;
+  line-height: 1.35;
+  margin: 0;
+  text-align: center;
+}
+
+.card-info-rings {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: 4px 0;
+}
+
+.card-info-rings .ring-meter {
+  transform: scale(0.85);
+}
+
+.card-info-rings .ring-value-text {
+  fill: var(--ink);
+}
+
+.card-info-rings .ring-label {
+  color: var(--muted);
+  text-shadow: none;
+}
+
+.card-actions {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  margin-top: auto;
+  padding-top: 6px;
+}
+
+.card-actions .round-button {
+  width: 56px;
+  height: 56px;
 }
 
 .video-overlay {

@@ -598,30 +598,14 @@ export default function Home() {
                         teamDescription: t.building,
                       })
                     }
+                    onSwipe={swipe}
                   />
                 )}
               </>
             )}
           </div>
 
-          <div className="actions" aria-label="Swipe actions">
-            <button
-              className="round-button pass"
-              onClick={() => swipe("left")}
-              aria-label="Pass on this team"
-              disabled={Boolean(winner) || showBetScreen}
-            >
-              <X size={30} />
-            </button>
-            <button
-              className="round-button like"
-              onClick={() => swipe("right")}
-              aria-label="Advance this team"
-              disabled={Boolean(winner) || showBetScreen}
-            >
-              <Heart size={30} />
-            </button>
-          </div>
+          {/* Swipe buttons are now inside the card */}
         </section>
 
         {/* Right panel — survivors */}
@@ -725,6 +709,7 @@ function TeamCard({
   niaInsight = null,
   insightLoading = false,
   onRequestInsight,
+  onSwipe,
 }: {
   team: TeamProfile;
   isBehind?: boolean;
@@ -733,6 +718,7 @@ function TeamCard({
   niaInsight?: string | null;
   insightLoading?: boolean;
   onRequestInsight?: (team: TeamProfile) => void;
+  onSwipe?: (choice: "left" | "right") => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const totalSwipes = team.totalSwipesRight + team.totalSwipesLeft;
@@ -759,26 +745,46 @@ function TeamCard({
       style={{ "--accent": team.color } as React.CSSProperties}
     >
       {!showDetails && (
-        <div className="video-wrap">
-          <video
-            ref={videoRef}
-            src={team.video}
-            poster={team.image}
-            autoPlay
-            muted
-            loop
-            playsInline
-          />
-          <div className="video-rings">
-            <RingMeter label="Competitiveness" value={team.competitiveness} />
-            <RingMeter label="Alignment" value={team.alignment} />
-            <RingMeter label="Marketability" value={team.marketability} />
+        <>
+          <div className="video-wrap video-wrap-compact">
+            <video
+              ref={videoRef}
+              src={team.video}
+              poster={team.image}
+              autoPlay
+              muted
+              loop
+              playsInline
+            />
           </div>
-          <div className="video-overlay">
-            <h2 className="video-team-name">{team.name}</h2>
-            <p className="video-tagline">{team.tagline}</p>
+          <div className="card-info-section">
+            <h2 className="card-info-name">{team.name}</h2>
+            <p className="card-info-desc">{team.tagline}</p>
+            <div className="card-info-rings">
+              <RingMeter label="Competitiveness" value={team.competitiveness} />
+              <RingMeter label="Alignment" value={team.alignment} />
+              <RingMeter label="Marketability" value={team.marketability} />
+            </div>
+            {onSwipe && !isBehind && (
+              <div className="card-actions">
+                <button
+                  className="round-button pass"
+                  onClick={() => onSwipe("left")}
+                  aria-label="Pass on this team"
+                >
+                  <X size={28} />
+                </button>
+                <button
+                  className="round-button like"
+                  onClick={() => onSwipe("right")}
+                  aria-label="Advance this team"
+                >
+                  <Heart size={28} />
+                </button>
+              </div>
+            )}
           </div>
-        </div>
+        </>
       )}
 
       {showDetails && (
