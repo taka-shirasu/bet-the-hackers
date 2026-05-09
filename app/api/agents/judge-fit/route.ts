@@ -1,14 +1,15 @@
 import { NextRequest } from "next/server";
 import { generateText } from "ai";
 import { openai } from "@ai-sdk/openai";
-import { JUDGING_RUBRIC } from "@/lib/judging-criteria";
+import { type Track, TRACK_CRITERIA, buildRubricPrompt } from "@/lib/judging-criteria";
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { teamName, teamDescription, strengths } = body as {
+  const { teamName, teamDescription, strengths, track = "always-on-agents" } = body as {
     teamName: string;
     teamDescription: string;
     strengths?: string[];
+    track?: Track;
   };
 
   if (!teamName || !teamDescription) {
@@ -18,22 +19,24 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const criteria = TRACK_CRITERIA[track];
+  const c = criteria[1];
+
   const { text } = await generateText({
     model: openai("gpt-4.1"),
     system: [
-      "You are the Statefulness Agent for a hackathon betting platform.",
-      "Your job is to evaluate criterion #2: Statefulness (25% of total score).",
+      `You are the ${c.name} Agent for a hackathon betting platform.`,
+      `Your job is to evaluate criterion #2: ${c.name} (${c.weight}% of total score).`,
       "",
-      JUDGING_RUBRIC,
+      buildRubricPrompt(track),
       "",
-      "Focus ONLY on criterion #2. Evaluate whether the project maintains memory between runs,",
-      "uses prior state to influence future behavior, and whether memory is load-bearing for the demo.",
+      `Focus ONLY on criterion #2: ${c.name}.`,
       "",
       "Return a JSON object with these fields:",
-      '- "summary": 2-3 sentence assessment of statefulness',
-      '- "statefulnessScore": number 0-100 (map the 1-5 rubric to 0-100 scale)',
-      '- "strongPoints": array of strengths in state management and memory',
-      '- "weakPoints": array of weaknesses or gaps',
+      `- "summary": 2-3 sentence assessment`,
+      '- "criterion2Score": number 0-100 (map the 1-5 rubric to 0-100 scale)',
+      '- "strongPoints": array of strengths',
+      '- "weakPoints": array of weaknesses',
       '- "rubricLevel": number 1-5 matching the rubric level',
       "Return ONLY valid JSON, no markdown.",
     ].join("\n"),
@@ -48,8 +51,8 @@ export async function POST(request: NextRequest) {
 
   try {
     const analysis = JSON.parse(text);
-    return Response.json({ teamName, agent: "statefulness", analysis });
+    return Response.json({ teamName, agent: c.name, analysis });
   } catch {
-    return Response.json({ teamName, agent: "statefulness", analysis: text });
+    return Response.json({ teamName, agent: c.name, analysis: text });
   }
 }

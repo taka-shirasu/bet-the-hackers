@@ -4,6 +4,7 @@ import { useId, useMemo, useState, useRef, useEffect } from "react";
 import { useBettingMemory } from "@/hooks/use-betting-memory";
 import { useTeamInsights } from "@/hooks/use-team-insights";
 import { useAgentScores } from "@/hooks/use-agent-scores";
+import { type Track, TRACK_CRITERIA } from "@/lib/judging-criteria";
 import {
   ArrowRight,
   BadgeCheck,
@@ -57,6 +58,7 @@ type TeamProfile = {
   competitiveness: number;
   alignment: number;
   marketability: number;
+  track: Track;
 };
 
 /* ------------------------------------------------------------------ */
@@ -92,6 +94,7 @@ const teamsData: TeamProfile[] = [
     competitiveness: 92,
     alignment: 85,
     marketability: 90,
+    track: "always-on-agents" as Track,
   },
   {
     id: 2,
@@ -119,6 +122,7 @@ const teamsData: TeamProfile[] = [
     competitiveness: 78,
     alignment: 82,
     marketability: 74,
+    track: "ship-it-full-stack" as Track,
   },
   {
     id: 3,
@@ -146,6 +150,7 @@ const teamsData: TeamProfile[] = [
     competitiveness: 70,
     alignment: 88,
     marketability: 68,
+    track: "company-brain" as Track,
   },
   {
     id: 4,
@@ -173,6 +178,7 @@ const teamsData: TeamProfile[] = [
     competitiveness: 85,
     alignment: 76,
     marketability: 91,
+    track: "ai-native-growth" as Track,
   },
   {
     id: 5,
@@ -200,6 +206,7 @@ const teamsData: TeamProfile[] = [
     competitiveness: 65,
     alignment: 72,
     marketability: 60,
+    track: "always-on-agents" as Track,
   },
 ];
 
@@ -354,6 +361,7 @@ export default function Home() {
         name: t.name,
         description: t.building,
         strengths: t.strengths,
+        track: t.track,
       })),
     );
   }, [fetchAllScores]);
@@ -772,7 +780,7 @@ function TeamCard({
   insightLoading?: boolean;
   onRequestInsight?: (team: TeamProfile) => void;
   onSwipe?: (choice: "left" | "right") => void;
-  agentScores?: { execution: number; statefulness: number; agenticDepth: number };
+  agentScores?: { criterion1: number; criterion2: number; criterion3: number };
   agentLoading?: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -780,9 +788,15 @@ function TeamCard({
   const popularity = totalSwipes > 0 ? Math.round((team.totalSwipesRight / totalSwipes) * 100) : 0;
 
   // Use live agent scores when available, fall back to hardcoded values
-  const execScore = agentScores?.execution ?? team.competitiveness;
-  const stateScore = agentScores?.statefulness ?? team.alignment;
-  const depthScore = agentScores?.agenticDepth ?? team.marketability;
+  const c1Score = agentScores?.criterion1 ?? team.competitiveness;
+  const c2Score = agentScores?.criterion2 ?? team.alignment;
+  const c3Score = agentScores?.criterion3 ?? team.marketability;
+
+  // Get track-specific criterion labels
+  const trackCriteria = TRACK_CRITERIA[team.track];
+  const label1 = trackCriteria[0].name;
+  const label2 = trackCriteria[1].name;
+  const label3 = trackCriteria[2].name;
 
   // Round 2 = show details directly (no video)
   const showDetails = round >= 2;
@@ -818,7 +832,7 @@ function TeamCard({
             />
             {!agentLoading && (
               <div className="winnability-badge">
-                <span className="winnability-value">{Math.round((execScore + stateScore + depthScore) / 3)}%</span>
+                <span className="winnability-value">{Math.round((c1Score + c2Score + c3Score) / 3)}%</span>
                 <span className="winnability-label">Win</span>
               </div>
             )}
@@ -831,9 +845,9 @@ function TeamCard({
                 <p className="agent-loading">Agents analyzing...</p>
               ) : (
                 <>
-                  <RingMeter label="Execution" value={execScore} />
-                  <RingMeter label="Statefulness" value={stateScore} />
-                  <RingMeter label="Agentic Depth" value={depthScore} />
+                  <RingMeter label={label1} value={c1Score} />
+                  <RingMeter label={label2} value={c2Score} />
+                  <RingMeter label={label3} value={c3Score} />
                 </>
               )}
             </div>

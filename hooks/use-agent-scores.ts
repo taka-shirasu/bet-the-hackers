@@ -1,19 +1,21 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
+import type { Track } from "@/lib/judging-criteria";
 
 interface TeamInput {
   id: number;
   name: string;
   description: string;
   strengths?: string[];
+  track: Track;
   allTeams?: { name: string; description: string }[];
 }
 
 interface AgentScores {
-  execution: number;
-  statefulness: number;
-  agenticDepth: number;
+  criterion1: number;
+  criterion2: number;
+  criterion3: number;
 }
 
 interface AgentScoresState {
@@ -61,24 +63,25 @@ export function useAgentScores(): AgentScoresState {
       teamName: team.name,
       teamDescription: team.description,
       strengths: team.strengths,
+      track: team.track,
     };
 
-    const [execution, statefulness, agenticDepth] = await Promise.all([
+    const [c1, c2, c3] = await Promise.all([
       fetchAgentScore(
         "/api/agents/competitiveness",
         { ...baseBody, allTeams: team.allTeams },
-        "executionScore",
+        "criterion1Score",
       ),
-      fetchAgentScore("/api/agents/judge-fit", baseBody, "statefulnessScore"),
-      fetchAgentScore("/api/agents/marketability", baseBody, "agenticDepthScore"),
+      fetchAgentScore("/api/agents/judge-fit", baseBody, "criterion2Score"),
+      fetchAgentScore("/api/agents/marketability", baseBody, "criterion3Score"),
     ]);
 
     setScores((prev) => ({
       ...prev,
       [team.id]: {
-        execution: execution >= 0 ? execution : 0,
-        statefulness: statefulness >= 0 ? statefulness : 0,
-        agenticDepth: agenticDepth >= 0 ? agenticDepth : 0,
+        criterion1: c1 >= 0 ? c1 : 0,
+        criterion2: c2 >= 0 ? c2 : 0,
+        criterion3: c3 >= 0 ? c3 : 0,
       },
     }));
 

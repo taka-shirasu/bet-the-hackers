@@ -1,19 +1,21 @@
 import { NextRequest } from "next/server";
 import { generateText } from "ai";
 import { openai } from "@ai-sdk/openai";
-import { JUDGING_RUBRIC } from "@/lib/judging-criteria";
+import { type Track, buildRubricPrompt, TRACK_CRITERIA } from "@/lib/judging-criteria";
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { teams, agentResults } = body as {
+  const { teams, agentResults, track = "always-on-agents" } = body as {
     teams: {
       name: string;
       description: string;
-      executionScore?: number;
-      statefulnessScore?: number;
-      agenticDepthScore?: number;
+      criterion1Score?: number;
+      criterion2Score?: number;
+      criterion3Score?: number;
+      track?: Track;
     }[];
     agentResults?: Record<string, unknown>;
+    track?: Track;
   };
 
   if (!teams || teams.length === 0) {
@@ -23,20 +25,17 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const criteria = TRACK_CRITERIA[track];
+
   const { text } = await generateText({
     model: openai("gpt-4.1"),
     system: [
       "You are the Final Ranker Agent for a hackathon betting platform.",
       "Aggregate all agent scores to produce a definitive ranking of teams.",
       "",
-      JUDGING_RUBRIC,
+      buildRubricPrompt(track),
       "",
-      "Use the EXACT weights from the rubric:",
-      "- Genuine Background Execution: 30%",
-      "- Statefulness: 25%",
-      "- Agentic Depth: 25%",
-      "- Demo & Presentation: 10%",
-      "- Judge's Personal Rating: 10%",
+      `Use the EXACT weights: ${criteria.map((c) => `${c.name}: ${c.weight}%`).join(", ")}, Demo & Presentation: 10%, Judge's Personal Rating: 10%.`,
       "",
       "Return a JSON object with these fields:",
       '- "rankings": array of objects sorted best to worst, each with "rank" (number), "teamName" (string), "finalScore" (number 0-100), "verdict" (1 sentence)',
@@ -50,16 +49,16 @@ export async function POST(request: NextRequest) {
       ...teams.map(
         (t) =>
           `- ${t.name}: ${t.description}${
-            t.executionScore != null
-              ? ` | Background Execution: ${t.executionScore}`
+            t.criterion1Score != null
+              ? ` | ${criteria[0].name}: ${t.criterion1Score}`
               : ""
           }${
-            t.statefulnessScore != null
-              ? ` | Statefulness: ${t.statefulnessScore}`
+            t.criterion2Score != null
+              ? ` | ${criteria[1].name}: ${t.criterion2Score}`
               : ""
           }${
-            t.agenticDepthScore != null
-              ? ` | Agentic Depth: ${t.agenticDepthScore}`
+            t.criterion3Score != null
+              ? ` | ${criteria[2].name}: ${t.criterion3Score}`
               : ""
           }`,
       ),
