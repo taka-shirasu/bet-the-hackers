@@ -15,9 +15,9 @@
 - Crossing all the data point to have an analysis of likeliyhood of winning
 
 # Interface
-- Swipe
+- Swipe 
 - Collecting data
-- Winner
+- Winner - betting dashboard (who bet on what)
 - Agentic dashboard - relationship
 
 # Data entry form
