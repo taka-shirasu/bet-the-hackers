@@ -357,7 +357,8 @@ h1 {
 .card-body-expandable {
   animation: slide-up 250ms ease-out;
   overflow-y: auto;
-  max-height: 55vh;
+  max-height: none;
+  flex: 1 1 auto;
   scrollbar-width: none;
 }
 .card-body-expandable::-webkit-scrollbar {
@@ -417,6 +418,33 @@ h1 {
 @keyframes bar-grow {
   from { transform: scaleX(0); }
   to { transform: scaleX(1); }
+}
+
+/* ---- Mini video player in expanded card ---- */
+
+.mini-player {
+  margin-top: 4px;
+}
+
+.mini-player-label {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  font-size: 0.78rem;
+  font-weight: 700;
+  gap: 6px;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.mini-player video {
+  border-radius: 10px;
+  display: block;
+  width: 100%;
+  max-height: 180px;
+  object-fit: cover;
+  background: #0a0a0a;
 }
 
 /* ---- end video-first ---- */
@@ -480,7 +508,7 @@ h1 {
   border-radius: 8px;
   display: flex;
   gap: 10px;
-  padding: 12px;
+  padding: 14px;
 }
 
 .profile-section svg {
@@ -520,7 +548,7 @@ h1 {
 .proof-row div {
   background: #f2eee6;
   border-radius: 8px;
-  padding: 11px;
+  padding: 14px;
 }
 
 .proof-row span,
@@ -529,8 +557,8 @@ h1 {
 }
 
 .proof-row strong {
-  font-size: 0.88rem;
-  line-height: 1.25;
+  font-size: 0.92rem;
+  line-height: 1.35;
   margin-top: 4px;
 }
 

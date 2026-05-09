@@ -264,10 +264,11 @@ export default function Home() {
 
   function advanceToNextRound() {
     setShowLeaderboard(false);
-    setRound((current) => current + 1);
-    setRoundTeams(survivors);
-    setIndex(0);
-    setSurvivors([]);
+    // Single round — pick the highest-scoring survivor as winner
+    const sorted = [...survivors].sort((a, b) => b.winScore - a.winScore);
+    if (sorted.length > 0) {
+      setWinner(sorted[0]);
+    }
   }
 
   function swipe(choice: "left" | "right") {
@@ -617,6 +618,20 @@ function TeamCard({
                 <ArrowRight size={14} />
               </a>
             ))}
+          </div>
+
+          <div className="mini-player">
+            <div className="mini-player-label">
+              <Play size={14} />
+              <span>Project demo</span>
+            </div>
+            <video
+              src={team.video}
+              poster={team.image}
+              controls
+              muted
+              playsInline
+            />
           </div>
         </div>
       )}
