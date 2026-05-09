@@ -423,13 +423,8 @@ export default function Home() {
     setSurvivors(nextSurvivors);
     setEliminated(nextEliminated);
 
-    if (round === 1) {
-      // Show bet screen only in Round 1
-      setShowBetScreen(true);
-    } else {
-      // Round 2 — skip betting, go straight to leaderboard
-      setShowLeaderboard(true);
-    }
+    // Show bet screen in both rounds
+    setShowBetScreen(true);
   }
 
   function advanceToNextRound() {
@@ -443,12 +438,8 @@ export default function Home() {
       setSurvivors([]);
       setEliminated([]);
     } else {
-      // Round 2 done — pick final winner (the team they bet on)
-      const betTeamIds = portfolio.bets
-        .filter((b) => !round1Winner || b.teamId !== round1Winner.id)
-        .map((b) => b.teamId);
-      const r2Winner = survivors.find((t) => betTeamIds.includes(t.id))
-        ?? survivors.sort((a, b) => b.winScore - a.winScore)[0];
+      // Round 2 done — winner is the top-scoring survivor
+      const r2Winner = [...survivors].sort((a, b) => b.winScore - a.winScore)[0];
       if (r2Winner) {
         setWinner(r2Winner);
       }
