@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("MONGODB_URI")
+}
+
+type Likelihood {
+  field  Int
+  judge  Int
+  market Int
+}
+
+type TeamMember {
+  name     String
+  role     String
+  linkedin String
+}
+
+type SubmissionMember {
+  name     String?
+  linkedin String
+}
+
+model Team {
+  id         String       @id @default(auto()) @map("_id") @db.ObjectId
+  slug       String?      @unique
+  name       String
+  work       String
+  winScore   Int
+  likelihood Likelihood
+  image      String
+  team       TeamMember[]
+  color      String
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  @@map("teams")
+}
+
+model Submission {
+  id                 String             @id @default(auto()) @map("_id") @db.ObjectId
+  publicId           String             @unique
+  teamName           String
+  projectDescription String
+  track              String
+  industry           String
+  insights           String
+  members            SubmissionMember[]
+  createdAt          DateTime           @default(now())
+
+  @@map("submissions")
+}
