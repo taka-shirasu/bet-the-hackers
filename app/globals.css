@@ -194,6 +194,7 @@ h1 {
 }
 
 .bet-card {
+  background: linear-gradient(135deg, #c85a6a 0%, #b44a5a 30%, #a03e50 60%, #8b3448 100%);
   display: flex;
   flex-direction: column;
   transform-origin: 50% 90%;
@@ -316,6 +317,7 @@ h1 {
   gap: 4px;
   padding: 10px 16px 8px;
   flex: 0 0 auto;
+  color: #fff;
 }
 
 .card-info-name {
@@ -326,7 +328,7 @@ h1 {
 }
 
 .card-info-desc {
-  color: var(--muted);
+  color: rgba(255, 255, 255, 0.8);
   font-size: 0.88rem;
   font-weight: 500;
   line-height: 1.35;
@@ -347,16 +349,16 @@ h1 {
 }
 
 .card-info-rings .ring-value-text {
-  fill: var(--ink);
+  fill: #fff;
 }
 
 .card-info-rings .ring-label {
-  color: var(--muted);
+  color: rgba(255, 255, 255, 0.8);
   text-shadow: none;
 }
 
 .agent-loading {
-  color: var(--muted);
+  color: rgba(255, 255, 255, 0.7);
   font-size: 0.82rem;
   font-style: italic;
   animation: pulse 1.5s ease-in-out infinite;
