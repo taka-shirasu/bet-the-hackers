@@ -539,10 +539,6 @@ export default function Home() {
               <span>Create Account</span>
             </button>
           )}
-          <div className="bankroll">
-            <Coins size={18} />
-            <span>{portfolio.credits.toLocaleString()} credits</span>
-          </div>
           <Link href="/dashboard" className="bankroll">
             <BarChart3 size={18} />
             <span>Dashboard</span>
@@ -1195,8 +1191,8 @@ function AccountModal({
   onClose: () => void;
   onCreateAccount: (name: string, email: string) => void;
 }) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -1205,29 +1201,34 @@ function AccountModal({
         <p className="muted">Track your bets and appear on the leaderboard.</p>
 
         <label className="account-field">
-          <span>Name</span>
+          <span>First name</span>
           <input
             type="text"
-            placeholder="Your name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            placeholder="First name"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
           />
         </label>
 
         <label className="account-field">
-          <span>Email</span>
+          <span>Last name</span>
           <input
-            type="email"
-            placeholder="you@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            type="text"
+            placeholder="Last name"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
           />
         </label>
 
         <button
           className="primary-action"
-          disabled={!name.trim() || !email.trim()}
-          onClick={() => onCreateAccount(name.trim(), email.trim())}
+          disabled={!firstName.trim() || !lastName.trim()}
+          onClick={() =>
+            onCreateAccount(
+              `${firstName.trim()} ${lastName.trim()}`,
+              `${firstName.trim().toLowerCase()}.${lastName.trim().toLowerCase()}`,
+            )
+          }
         >
           <UserPlus size={18} />
           Create Account
