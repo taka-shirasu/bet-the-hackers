@@ -816,6 +816,12 @@ function TeamCard({
               loop
               playsInline
             />
+            {!agentLoading && (
+              <div className="winnability-badge">
+                <span className="winnability-value">{Math.round((compScore + alignScore + marketScore) / 3)}%</span>
+                <span className="winnability-label">Win</span>
+              </div>
+            )}
           </div>
           <div className="card-info-section">
             <h2 className="card-info-name">{team.name}</h2>
