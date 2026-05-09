@@ -23,7 +23,9 @@ import {
   ChevronDown,
   UserPlus,
   LogIn,
+  BarChart3,
 } from "lucide-react";
+import Link from "next/link";
 import type { Bet, UserPortfolio, LeaderboardEntry } from "@/types";
 
 /* ------------------------------------------------------------------ */
@@ -343,6 +345,31 @@ export default function Home() {
   // Round 1 winner (stored so we can remove them from Round 2)
   const [round1Winner, setRound1Winner] = useState<TeamProfile | null>(null);
 
+  // Persist winner + portfolio to localStorage for dashboard
+  useEffect(() => {
+    if (winner) {
+      localStorage.setItem("hackbet_winner", JSON.stringify(winner));
+    }
+  }, [winner]);
+
+  useEffect(() => {
+    if (portfolio.bets.length > 0) {
+      localStorage.setItem("hackbet_portfolio", JSON.stringify(portfolio));
+    }
+  }, [portfolio]);
+
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem("hackbet_user", JSON.stringify(user));
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (Object.keys(teamBetTotals).length > 0) {
+      localStorage.setItem("hackbet_team_totals", JSON.stringify(teamBetTotals));
+    }
+  }, [teamBetTotals]);
+
   const active = roundTeams[index];
   const next = roundTeams[index + 1];
   const totalRemaining = winner ? 1 : roundTeams.length - index;
@@ -516,6 +543,10 @@ export default function Home() {
             <Coins size={18} />
             <span>{portfolio.credits.toLocaleString()} credits</span>
           </div>
+          <Link href="/dashboard" className="bankroll">
+            <BarChart3 size={18} />
+            <span>Dashboard</span>
+          </Link>
           <button className="bankroll" onClick={reset}>
             <RotateCcw size={18} />
             <span>Reset</span>
