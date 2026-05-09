@@ -1081,6 +1081,27 @@ h1 {
   padding: 3px 10px;
 }
 
+.bet-pick {
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  width: 100%;
+}
+
+.bet-pick:hover {
+  border-color: var(--accent, #ff4458);
+}
+
+.bet-pick--active {
+  border-color: var(--accent, #ff4458);
+  box-shadow: 0 0 0 2px var(--accent, #ff4458);
+}
+
+.bet-screen-wager {
+  animation: slide-up 0.25s ease-out;
+  margin-bottom: 8px;
+}
+
 .bet-screen-slider-row {
   align-items: center;
   display: flex;

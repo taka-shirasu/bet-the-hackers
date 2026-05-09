@@ -757,75 +757,49 @@ function BetScreen({
   onConfirm: (bets: Bet[]) => void;
   onSkip: () => void;
 }) {
-  const [amounts, setAmounts] = useState<Record<number, number>>(
-    () => Object.fromEntries(teams.map((t) => [t.id, 0])),
-  );
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [amount, setAmount] = useState(0);
 
-  const totalAllocated = Object.values(amounts).reduce((s, v) => s + v, 0);
-  const remaining = credits - totalAllocated;
-
-  function updateAmount(teamId: number, value: number) {
-    setAmounts((prev) => {
-      const otherTotal = Object.entries(prev)
-        .filter(([id]) => Number(id) !== teamId)
-        .reduce((s, [, v]) => s + v, 0);
-      const capped = Math.min(value, credits - otherTotal);
-      return { ...prev, [teamId]: Math.max(0, capped) };
-    });
-  }
+  const selected = teams.find((t) => t.id === selectedId) ?? null;
+  const payout = selected && amount > 0 ? calculatePayout(amount, selected.winScore) : 0;
 
   function handleConfirm() {
-    const bets: Bet[] = teams
-      .filter((t) => amounts[t.id] > 0)
-      .map((t) => ({
-        id: `bet-${Date.now()}-${t.id}`,
-        userId: "user-current",
-        teamId: t.id,
-        teamName: t.name,
-        amount: amounts[t.id],
-        potentialPayout: calculatePayout(amounts[t.id], t.winScore),
-        winProbability: t.winScore / 100,
-        createdAt: new Date().toISOString(),
-      }));
-    onConfirm(bets);
+    if (!selected || amount === 0) return;
+    const bet: Bet = {
+      id: `bet-${Date.now()}-${selected.id}`,
+      userId: "user-current",
+      teamId: selected.id,
+      teamName: selected.name,
+      amount,
+      potentialPayout: calculatePayout(amount, selected.winScore),
+      winProbability: selected.winScore / 100,
+      createdAt: new Date().toISOString(),
+    };
+    onConfirm([bet]);
   }
 
   return (
     <div className="modal-backdrop">
       <div className="bet-screen">
         <div className="bet-screen-header">
-          <Coins size={24} />
-          <h2>Place your bets</h2>
-          <p>You liked {teams.length} team{teams.length > 1 ? "s" : ""}. Allocate credits to bet on who will win.</p>
-        </div>
-
-        <div className="bet-screen-credits">
-          <div>
-            <span>Available</span>
-            <strong>{remaining.toLocaleString()}</strong>
-          </div>
-          <div>
-            <span>Allocated</span>
-            <strong>{totalAllocated.toLocaleString()}</strong>
-          </div>
-          <div>
-            <span>Total payout</span>
-            <strong style={{ color: "#12b886" }}>
-              +{teams
-                .filter((t) => amounts[t.id] > 0)
-                .reduce((s, t) => s + calculatePayout(amounts[t.id], t.winScore), 0)
-                .toLocaleString()}
-            </strong>
-          </div>
+          <Crown size={24} />
+          <h2>Pick your winner</h2>
+          <p>Choose the team you think will win, then decide how much to bet.</p>
         </div>
 
         <div className="bet-screen-list">
           {teams.map((team) => {
-            const amt = amounts[team.id];
-            const payout = amt > 0 ? calculatePayout(amt, team.winScore) : 0;
-            const maxForTeam = Math.min(remaining + amt, 500);
+            const isSelected = selectedId === team.id;
             return (
-              <div className="bet-screen-team" key={team.id}>
+              <button
+                className={`bet-screen-team bet-pick ${isSelected ? "bet-pick--active" : ""}`}
+                key={team.id}
+                onClick={() => {
+                  setSelectedId(team.id);
+                  if (amount === 0) setAmount(50);
+                }}
+                type="button"
+              >
                 <div className="bet-screen-team-info">
                   <span className="bet-screen-color" style={{ backgroundColor: team.color }} />
                   <div>
@@ -838,27 +812,43 @@ function BetScreen({
                     </span>
                   )}
                 </div>
-                <div className="bet-screen-slider-row">
-                  <input
-                    type="range"
-                    min={0}
-                    max={maxForTeam}
-                    step={10}
-                    value={amt}
-                    onChange={(e) => updateAmount(team.id, Number(e.target.value))}
-                    className="bet-slider"
-                  />
-                  <div className="bet-screen-amounts">
-                    <strong className="bet-amount-value">{amt}</strong>
-                    {payout > 0 && (
-                      <small style={{ color: "#12b886" }}>+{payout.toLocaleString()}</small>
-                    )}
-                  </div>
-                </div>
-              </div>
+              </button>
             );
           })}
         </div>
+
+        {selected && (
+          <div className="bet-screen-wager">
+            <div className="bet-screen-credits">
+              <div>
+                <span>Available</span>
+                <strong>{(credits - amount).toLocaleString()}</strong>
+              </div>
+              <div>
+                <span>Bet</span>
+                <strong>{amount.toLocaleString()}</strong>
+              </div>
+              <div>
+                <span>Payout</span>
+                <strong style={{ color: "#12b886" }}>+{payout.toLocaleString()}</strong>
+              </div>
+            </div>
+            <div className="bet-screen-slider-row">
+              <input
+                type="range"
+                min={10}
+                max={Math.min(credits, 500)}
+                step={10}
+                value={amount}
+                onChange={(e) => setAmount(Number(e.target.value))}
+                className="bet-slider"
+              />
+              <div className="bet-screen-amounts">
+                <strong className="bet-amount-value">{amount}</strong>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="bet-actions">
           <button className="bet-action-skip" onClick={onSkip}>
@@ -867,10 +857,9 @@ function BetScreen({
           <button
             className="bet-action-confirm"
             onClick={handleConfirm}
-            disabled={totalAllocated === 0}
+            disabled={!selected || amount === 0}
           >
-            Confirm {Object.values(amounts).filter((v) => v > 0).length} bet
-            {Object.values(amounts).filter((v) => v > 0).length !== 1 ? "s" : ""}
+            Bet on {selected?.name ?? "…"}
           </button>
         </div>
       </div>
