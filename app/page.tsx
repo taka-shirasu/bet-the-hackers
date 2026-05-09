@@ -516,10 +516,21 @@ function TeamCard({
           loop
           playsInline
         />
-        <div className="odds-pill">{team.winScore}%</div>
         <div className="video-overlay">
           <h2 className="video-team-name">{team.name}</h2>
           <p className="video-tagline">{team.tagline}</p>
+          <div className="stat-bar">
+            <div className="stat-bar-header">
+              <span className="stat-bar-label">Win Probability</span>
+              <span className="stat-bar-value">{team.winScore}%</span>
+            </div>
+            <div className="stat-bar-track">
+              <div
+                className="stat-bar-fill"
+                style={{ "--fill-pct": `${team.winScore}%` } as React.CSSProperties}
+              />
+            </div>
+          </div>
         </div>
         {!expanded && (
           <button className="expand-trigger" onClick={handleExpand}>
