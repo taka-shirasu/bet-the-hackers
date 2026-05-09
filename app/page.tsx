@@ -276,10 +276,16 @@ function RingMeter({ label, value }: { label: string; value: number }) {
           style={{ "--ring-circumference": `${circumference}` } as React.CSSProperties}
           transform={`rotate(-90 ${cx} ${cy})`}
         />
+        <text
+          x={cx}
+          y={cy}
+          textAnchor="middle"
+          dominantBaseline="central"
+          className="ring-value-text"
+        >
+          {value}%
+        </text>
       </svg>
-      <div className="ring-center">
-        <span className="ring-value">{value}%</span>
-      </div>
       <div className="ring-label">{label}</div>
     </div>
   );

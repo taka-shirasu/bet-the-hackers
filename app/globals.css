@@ -407,22 +407,11 @@ h1 {
   to { stroke-dasharray: inherit; }
 }
 
-.ring-center {
-  align-items: center;
-  display: flex;
-  inset: 0;
-  justify-content: center;
-  position: absolute;
-  top: 0;
-  /* offset for the label below */
-  bottom: 20px;
-}
-
-.ring-value {
-  color: #fff;
-  font-size: 1.1rem;
+.ring-value-text {
+  fill: #fff;
+  font-size: 22px;
   font-weight: 900;
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7);
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.6));
 }
 
 .ring-label {
