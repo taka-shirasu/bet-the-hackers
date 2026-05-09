@@ -1,6 +1,16 @@
-# Hackathon Bet AI — Nia & Hyperspell Integration
+# Bet the Hackers — Full Integration
 
-A Next.js integration layer for a Tinder-like hackathon betting app. Users swipe left/right on hackathon projects and bet on who they think will win first prize.
+A Tinder-style hackathon betting app. Swipe right on teams you think will win, place bets with credits, and compete on the leaderboard.
+
+Built on the **bet-the-hackers** frontend with **Nia** (AI research) + **Hyperspell** (memory layer) backend + 5 betting features.
+
+## Features
+
+1. **Bet Modal** — swiping right opens a bottom-sheet with a bet slider, credits display, and payout calculator
+2. **Dynamic Probability** — each swipe nudges win odds via dampened blending (85% old + 15% new ratio)
+3. **Portfolio Sidebar** — persistent view of your credits, running bets, and total potential payout
+4. **Leaderboard Reveal** — between rounds, see who bet what and current standings
+5. **Social Proof** — "8 others bet on this team", popularity bars, and trending badges on cards
 
 ## What's Integrated
 
@@ -20,26 +30,26 @@ A Next.js integration layer for a Tinder-like hackathon betting app. Users swipe
 ## Project Structure
 
 ```
-src/
-├── app/
-│   ├── api/
-│   │   ├── chat/route.ts              # Combined AI chat (Nia + Hyperspell)
-│   │   ├── nia/
-│   │   │   ├── research/route.ts      # Stream Nia Tracer/Oracle research
-│   │   │   └── insights/route.ts      # Generate project insights via Nia tools
-│   │   └── hyperspell/
-│   │       ├── memory/route.ts        # Store bets and swipes in memory
-│   │       └── search/route.ts        # Search user memory / get preferences
-│   ├── layout.tsx
-│   └── page.tsx
-├── hooks/
-│   ├── use-project-insights.ts        # React hook for Nia project insights
-│   └── use-betting-memory.ts          # React hook for Hyperspell memory
-├── lib/
-│   ├── nia.ts                         # Nia SDK wrapper (tools, middleware, streaming)
-│   └── hyperspell.ts                  # Hyperspell SDK wrapper (memory, search)
-└── types/
-    └── index.ts                       # Shared TypeScript types
+app/
+├── api/
+│   ├── chat/route.ts              # Combined AI chat (Nia + Hyperspell)
+│   ├── nia/
+│   │   ├── research/route.ts      # Stream Nia Tracer/Oracle research
+│   │   └── insights/route.ts      # Generate project insights via Nia tools
+│   └── hyperspell/
+│       ├── memory/route.ts        # Store bets and swipes in memory
+│       └── search/route.ts        # Search user memory / get preferences
+├── globals.css                    # All styling (vanilla CSS)
+├── layout.tsx
+└── page.tsx                       # Main app — swipe cards + betting UI
+hooks/
+├── use-team-insights.ts           # React hook for Nia project insights
+└── use-betting-memory.ts          # React hook for Hyperspell memory
+lib/
+├── nia.ts                         # Nia SDK wrapper (tools, streaming)
+└── hyperspell.ts                  # Hyperspell SDK wrapper (memory, search)
+types/
+└── index.ts                       # Shared TypeScript types (Bet, Portfolio, Leaderboard)
 ```
 
 ## Setup
@@ -166,16 +176,9 @@ await storeSwipe({
 const prefs = await getPreferences();
 ```
 
-## Merging Into Your Existing Project
+## Credits
 
-To add these integrations to an existing Next.js app:
-
-1. Copy `src/lib/nia.ts` and `src/lib/hyperspell.ts` into your `lib/` folder
-2. Copy the API routes from `src/app/api/` into your `app/api/` folder
-3. Copy the hooks from `src/hooks/` into your hooks folder
-4. Copy the types from `src/types/` into your types folder
-5. Install the dependencies:
-   ```bash
-   npm install @nozomioai/nia-ai-sdk ai @ai-sdk/openai zod hyperspell@0.35.0
-   ```
-6. Add the environment variables from `.env.example` to your `.env.local`
+- **Frontend**: [taka-shirasu/bet-the-hackers](https://github.com/taka-shirasu/bet-the-hackers)
+- **Nia integration**: [trynia.ai](https://www.trynia.ai/)
+- **Hyperspell integration**: [hyperspell.com](https://hyperspell.com/)
+- **Betting UI skeleton**: 5 features (bet modal, dynamic odds, portfolio, leaderboard, social proof)
