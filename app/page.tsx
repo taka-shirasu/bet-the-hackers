@@ -301,6 +301,9 @@ function RingMeter({ label, value }: { label: string; value: number }) {
 /* ------------------------------------------------------------------ */
 
 export default function Home() {
+  // Hydrate state from localStorage on mount
+  const [hydrated, setHydrated] = useState(false);
+
   const [round, setRound] = useState(1);
   const [roundTeams, setRoundTeams] = useState<TeamProfile[]>(teamsData);
   const [index, setIndex] = useState(0);
@@ -343,30 +346,60 @@ export default function Home() {
   // Round 1 winner (stored so we can remove them from Round 2)
   const [round1Winner, setRound1Winner] = useState<TeamProfile | null>(null);
 
-  // Persist winner + portfolio to localStorage for dashboard
+  // Restore all game state from localStorage on mount
   useEffect(() => {
-    if (winner) {
-      localStorage.setItem("hackbet_winner", JSON.stringify(winner));
-    }
-  }, [winner]);
+    try {
+      const saved = localStorage.getItem("hackbet_game_state");
+      if (saved) {
+        const s = JSON.parse(saved);
+        if (s.round) setRound(s.round);
+        if (s.roundTeams) setRoundTeams(s.roundTeams);
+        if (typeof s.index === "number") setIndex(s.index);
+        if (s.survivors) setSurvivors(s.survivors);
+        if (s.eliminated) setEliminated(s.eliminated);
+        if (s.winner) setWinner(s.winner);
+        if (s.portfolio) setPortfolio(s.portfolio);
+        if (s.showBetScreen) setShowBetScreen(s.showBetScreen);
+        if (s.showLeaderboard) setShowLeaderboard(s.showLeaderboard);
+        if (s.teamBetTotals) setTeamBetTotals(s.teamBetTotals);
+        if (s.round1Winner) setRound1Winner(s.round1Winner);
+      }
+      const savedUser = localStorage.getItem("hackbet_user");
+      if (savedUser) setUser(JSON.parse(savedUser));
+    } catch { /* ignore parse errors */ }
+    setHydrated(true);
+  }, []);
 
+  // Persist all game state to localStorage whenever it changes
   useEffect(() => {
-    if (portfolio.bets.length > 0) {
-      localStorage.setItem("hackbet_portfolio", JSON.stringify(portfolio));
-    }
-  }, [portfolio]);
+    if (!hydrated) return;
+    localStorage.setItem(
+      "hackbet_game_state",
+      JSON.stringify({
+        round,
+        roundTeams,
+        index,
+        survivors,
+        eliminated,
+        winner,
+        portfolio,
+        showBetScreen,
+        showLeaderboard,
+        teamBetTotals,
+        round1Winner,
+      }),
+    );
+    // Also keep individual keys for dashboard
+    if (winner) localStorage.setItem("hackbet_winner", JSON.stringify(winner));
+    if (portfolio.bets.length > 0) localStorage.setItem("hackbet_portfolio", JSON.stringify(portfolio));
+    if (Object.keys(teamBetTotals).length > 0) localStorage.setItem("hackbet_team_totals", JSON.stringify(teamBetTotals));
+  }, [hydrated, round, roundTeams, index, survivors, eliminated, winner, portfolio, showBetScreen, showLeaderboard, teamBetTotals, round1Winner]);
 
   useEffect(() => {
     if (user) {
       localStorage.setItem("hackbet_user", JSON.stringify(user));
     }
   }, [user]);
-
-  useEffect(() => {
-    if (Object.keys(teamBetTotals).length > 0) {
-      localStorage.setItem("hackbet_team_totals", JSON.stringify(teamBetTotals));
-    }
-  }, [teamBetTotals]);
 
   const active = roundTeams[index];
   const next = roundTeams[index + 1];
@@ -514,10 +547,11 @@ export default function Home() {
     setTeamBetTotals({});
     setRound1Winner(null);
 
-    // Clear dashboard localStorage
+    // Clear all localStorage
     localStorage.removeItem("hackbet_winner");
     localStorage.removeItem("hackbet_portfolio");
     localStorage.removeItem("hackbet_team_totals");
+    localStorage.removeItem("hackbet_game_state");
   }
 
   return (
