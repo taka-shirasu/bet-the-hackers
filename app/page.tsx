@@ -1031,7 +1031,7 @@ function BetScreen({
               <input
                 type="range"
                 min={10}
-                max={Math.min(credits, 500)}
+                max={credits}
                 step={10}
                 value={amount}
                 onChange={(e) => setAmount(Number(e.target.value))}
