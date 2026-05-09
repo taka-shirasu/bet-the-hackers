@@ -19,6 +19,8 @@ import {
   Award,
   Play,
   ChevronDown,
+  UserPlus,
+  LogIn,
 } from "lucide-react";
 import type { Bet, UserPortfolio, LeaderboardEntry } from "@/types";
 
@@ -232,6 +234,15 @@ export default function Home() {
   const [showBetScreen, setShowBetScreen] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
 
+  // Account state
+  const [showAccountModal, setShowAccountModal] = useState(false);
+  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+
+  // Track all bets per team (teamId → total amount wagered + count)
+  const [teamBetTotals, setTeamBetTotals] = useState<
+    Record<number, { total: number; count: number }>
+  >({});
+
   const active = roundTeams[index];
   const next = roundTeams[index + 1];
   const totalRemaining = winner ? 1 : roundTeams.length - index;
@@ -310,6 +321,19 @@ export default function Home() {
       bets: [...prev.bets, ...bets],
     }));
 
+    // Track bets per team
+    setTeamBetTotals((prev) => {
+      const next = { ...prev };
+      for (const bet of bets) {
+        const existing = next[bet.teamId] ?? { total: 0, count: 0 };
+        next[bet.teamId] = {
+          total: existing.total + bet.amount,
+          count: existing.count + 1,
+        };
+      }
+      return next;
+    });
+
     setShowBetScreen(false);
     setShowLeaderboard(true);
   }
@@ -335,6 +359,7 @@ export default function Home() {
     });
     setShowBetScreen(false);
     setShowLeaderboard(false);
+    setTeamBetTotals({});
   }
 
   return (
@@ -348,6 +373,17 @@ export default function Home() {
           <h1>Swipe for the team you think wins.</h1>
         </div>
         <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          {user ? (
+            <div className="bankroll">
+              <LogIn size={16} />
+              <span>{user.name}</span>
+            </div>
+          ) : (
+            <button className="bankroll" onClick={() => setShowAccountModal(true)}>
+              <UserPlus size={18} />
+              <span>Create Account</span>
+            </button>
+          )}
           <div className="bankroll">
             <Coins size={18} />
             <span>{portfolio.credits.toLocaleString()} credits</span>
@@ -444,6 +480,33 @@ export default function Home() {
 
           {/* Portfolio section */}
           <PortfolioPanel portfolio={portfolio} round={round} />
+
+          {/* Bets by team */}
+          {Object.keys(teamBetTotals).length > 0 && (
+            <div className="portfolio-section">
+              <div className="panel-heading">
+                <TrendingUp size={16} />
+                <h2 style={{ fontSize: "0.95rem" }}>Bets by team</h2>
+              </div>
+              <div className="team-bets-list">
+                {teamsData
+                  .filter((t) => teamBetTotals[t.id])
+                  .map((t) => (
+                    <div className="team-bet-row" key={t.id}>
+                      <span className="team-bet-dot" style={{ backgroundColor: t.color }} />
+                      <div className="team-bet-info">
+                        <strong>{t.name}</strong>
+                        <small>
+                          {teamBetTotals[t.id].count}{" "}
+                          {teamBetTotals[t.id].count === 1 ? "bet" : "bets"} &middot;{" "}
+                          {teamBetTotals[t.id].total} credits
+                        </small>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
         </aside>
       </section>
 
@@ -463,6 +526,17 @@ export default function Home() {
           round={round}
           portfolio={portfolio}
           onNext={advanceToNextRound}
+        />
+      )}
+
+      {/* Account creation modal */}
+      {showAccountModal && (
+        <AccountModal
+          onClose={() => setShowAccountModal(false)}
+          onCreateAccount={(name, email) => {
+            setUser({ name, email });
+            setShowAccountModal(false);
+          }}
         />
       )}
     </main>
@@ -897,10 +971,10 @@ function LeaderboardOverlay({
         <div className="leaderboard-header">
           <Award size={24} />
           <p className="eyebrow" style={{ color: "#fff", marginBottom: 0 }}>
-            Round {round} Complete
+            Betting Complete
           </p>
           <h2>Leaderboard</h2>
-          <p>{portfolio.bets.length} bets placed this round</p>
+          <p>{portfolio.bets.length} bets placed</p>
         </div>
 
         <div className="leaderboard-entries">
@@ -939,7 +1013,64 @@ function LeaderboardOverlay({
 
         <button className="primary-action leaderboard-next" onClick={onNext}>
           <ArrowRight size={18} />
-          Continue to Round {round + 1}
+          See final results
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Account creation modal                                             */
+/* ------------------------------------------------------------------ */
+
+function AccountModal({
+  onClose,
+  onCreateAccount,
+}: {
+  onClose: () => void;
+  onCreateAccount: (name: string, email: string) => void;
+}) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="account-modal" onClick={(e) => e.stopPropagation()}>
+        <h2>Create Account</h2>
+        <p className="muted">Track your bets and appear on the leaderboard.</p>
+
+        <label className="account-field">
+          <span>Name</span>
+          <input
+            type="text"
+            placeholder="Your name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </label>
+
+        <label className="account-field">
+          <span>Email</span>
+          <input
+            type="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </label>
+
+        <button
+          className="primary-action"
+          disabled={!name.trim() || !email.trim()}
+          onClick={() => onCreateAccount(name.trim(), email.trim())}
+        >
+          <UserPlus size={18} />
+          Create Account
+        </button>
+
+        <button className="account-skip" onClick={onClose}>
+          Skip for now
         </button>
       </div>
     </div>
