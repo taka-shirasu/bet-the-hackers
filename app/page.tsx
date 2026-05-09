@@ -49,6 +49,9 @@ type TeamProfile = {
   totalBettors: number;
   totalSwipesRight: number;
   totalSwipesLeft: number;
+  competitiveness: number;
+  alignment: number;
+  marketability: number;
 };
 
 /* ------------------------------------------------------------------ */
@@ -81,6 +84,9 @@ const teamsData: TeamProfile[] = [
     totalBettors: 12,
     totalSwipesRight: 45,
     totalSwipesLeft: 8,
+    competitiveness: 92,
+    alignment: 85,
+    marketability: 90,
   },
   {
     id: 2,
@@ -105,6 +111,9 @@ const teamsData: TeamProfile[] = [
     totalBettors: 8,
     totalSwipesRight: 31,
     totalSwipesLeft: 22,
+    competitiveness: 78,
+    alignment: 82,
+    marketability: 74,
   },
   {
     id: 3,
@@ -129,6 +138,9 @@ const teamsData: TeamProfile[] = [
     totalBettors: 5,
     totalSwipesRight: 22,
     totalSwipesLeft: 31,
+    competitiveness: 70,
+    alignment: 88,
+    marketability: 68,
   },
   {
     id: 4,
@@ -153,6 +165,9 @@ const teamsData: TeamProfile[] = [
     totalBettors: 10,
     totalSwipesRight: 38,
     totalSwipesLeft: 15,
+    competitiveness: 85,
+    alignment: 76,
+    marketability: 91,
   },
   {
     id: 5,
@@ -177,6 +192,9 @@ const teamsData: TeamProfile[] = [
     totalBettors: 3,
     totalSwipesRight: 12,
     totalSwipesLeft: 41,
+    competitiveness: 65,
+    alignment: 72,
+    marketability: 60,
   },
 ];
 
@@ -604,21 +622,29 @@ function TeamCard({
             loop
             playsInline
           />
+          <div className="video-meters">
+            {([
+              ["Competitiveness", team.competitiveness],
+              ["Alignment", team.alignment],
+              ["Marketability", team.marketability],
+            ] as const).map(([label, value]) => (
+              <div className="stat-bar" key={label}>
+                <div className="stat-bar-header">
+                  <span className="stat-bar-label">{label}</span>
+                  <span className="stat-bar-value">{value}%</span>
+                </div>
+                <div className="stat-bar-track">
+                  <div
+                    className="stat-bar-fill"
+                    style={{ "--fill-pct": `${value}%` } as React.CSSProperties}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
           <div className="video-overlay">
             <h2 className="video-team-name">{team.name}</h2>
             <p className="video-tagline">{team.tagline}</p>
-            <div className="stat-bar">
-              <div className="stat-bar-header">
-                <span className="stat-bar-label">Win Probability</span>
-                <span className="stat-bar-value">{team.winScore}%</span>
-              </div>
-              <div className="stat-bar-track">
-                <div
-                  className="stat-bar-fill"
-                  style={{ "--fill-pct": `${team.winScore}%` } as React.CSSProperties}
-                />
-              </div>
-            </div>
           </div>
         </div>
       )}

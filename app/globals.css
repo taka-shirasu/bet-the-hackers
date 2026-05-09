@@ -370,10 +370,22 @@ h1 {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* ---- Video meters (top of card) ---- */
+
+.video-meters {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  left: 18px;
+  position: absolute;
+  right: 18px;
+  top: 18px;
+  z-index: 3;
+}
+
 /* ---- Animated stat bar ---- */
 
 .stat-bar {
-  margin-top: 10px;
   pointer-events: none;
 }
 
