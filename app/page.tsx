@@ -869,6 +869,25 @@ function TeamCard({
               </a>
             ))}
           </div>
+
+          {onSwipe && !isBehind && (
+            <div className="card-actions">
+              <button
+                className="round-button pass"
+                onClick={() => onSwipe("left")}
+                aria-label="Pass on this team"
+              >
+                <X size={28} />
+              </button>
+              <button
+                className="round-button like"
+                onClick={() => onSwipe("right")}
+                aria-label="Advance this team"
+              >
+                <Heart size={28} />
+              </button>
+            </div>
+          )}
         </div>
       )}
     </article>
