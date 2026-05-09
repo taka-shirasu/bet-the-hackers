@@ -3,6 +3,7 @@
 import { useId, useMemo, useState, useRef, useEffect } from "react";
 import { useBettingMemory } from "@/hooks/use-betting-memory";
 import { useTeamInsights } from "@/hooks/use-team-insights";
+import { useAgentScores } from "@/hooks/use-agent-scores";
 import {
   ArrowRight,
   BadgeCheck,
@@ -338,6 +339,25 @@ export default function Home() {
     fetchInsights,
   } = useTeamInsights();
 
+  // AI agent scores integration
+  const {
+    scores: agentScores,
+    loading: agentLoading,
+    fetchAllScores,
+  } = useAgentScores();
+
+  // Fetch agent scores for all teams on mount
+  useEffect(() => {
+    fetchAllScores(
+      teamsData.map((t) => ({
+        id: t.id,
+        name: t.name,
+        description: t.building,
+        strengths: t.strengths,
+      })),
+    );
+  }, [fetchAllScores]);
+
   // Track all bets per team (teamId → total amount wagered + count)
   const [teamBetTotals, setTeamBetTotals] = useState<
     Record<number, { total: number; count: number }>
@@ -612,7 +632,7 @@ export default function Home() {
               <WinnerCard team={winner} onReset={reset} portfolio={portfolio} />
             ) : (
               <>
-                {next && <TeamCard team={next} isBehind round={round} key={`behind-${next.id}`} />}
+                {next && <TeamCard team={next} isBehind round={round} key={`behind-${next.id}`} agentScores={agentScores[next.id]} agentLoading={!!agentLoading[next.id]} />}
                 {active && (
                   <TeamCard
                     team={active}
@@ -628,6 +648,8 @@ export default function Home() {
                       })
                     }
                     onSwipe={swipe}
+                    agentScores={agentScores[active.id]}
+                    agentLoading={!!agentLoading[active.id]}
                   />
                 )}
               </>
@@ -739,6 +761,8 @@ function TeamCard({
   insightLoading = false,
   onRequestInsight,
   onSwipe,
+  agentScores,
+  agentLoading = false,
 }: {
   team: TeamProfile;
   isBehind?: boolean;
@@ -748,10 +772,17 @@ function TeamCard({
   insightLoading?: boolean;
   onRequestInsight?: (team: TeamProfile) => void;
   onSwipe?: (choice: "left" | "right") => void;
+  agentScores?: { competitiveness: number; judgeFit: number; marketability: number };
+  agentLoading?: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const totalSwipes = team.totalSwipesRight + team.totalSwipesLeft;
   const popularity = totalSwipes > 0 ? Math.round((team.totalSwipesRight / totalSwipes) * 100) : 0;
+
+  // Use live agent scores when available, fall back to hardcoded values
+  const compScore = agentScores?.competitiveness ?? team.competitiveness;
+  const alignScore = agentScores?.judgeFit ?? team.alignment;
+  const marketScore = agentScores?.marketability ?? team.marketability;
 
   // Round 2 = show details directly (no video)
   const showDetails = round >= 2;
@@ -790,9 +821,15 @@ function TeamCard({
             <h2 className="card-info-name">{team.name}</h2>
             <p className="card-info-desc">{team.tagline}</p>
             <div className="card-info-rings">
-              <RingMeter label="Competitiveness" value={team.competitiveness} />
-              <RingMeter label="Alignment" value={team.alignment} />
-              <RingMeter label="Marketability" value={team.marketability} />
+              {agentLoading ? (
+                <p className="agent-loading">Agents analyzing...</p>
+              ) : (
+                <>
+                  <RingMeter label="Competitiveness" value={compScore} />
+                  <RingMeter label="Alignment" value={alignScore} />
+                  <RingMeter label="Marketability" value={marketScore} />
+                </>
+              )}
             </div>
             {onSwipe && !isBehind && (
               <div className="card-actions">

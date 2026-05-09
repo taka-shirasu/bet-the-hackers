@@ -324,6 +324,18 @@ h1 {
   text-shadow: none;
 }
 
+.agent-loading {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-style: italic;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
 .card-actions {
   display: flex;
   gap: 18px;
