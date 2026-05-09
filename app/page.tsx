@@ -1,6 +1,8 @@
 "use client";
 
-import { useMemo, useState, useRef } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
+import { useBettingMemory } from "@/hooks/use-betting-memory";
+import { useTeamInsights } from "@/hooks/use-team-insights";
 import {
   ArrowRight,
   BadgeCheck,
@@ -321,6 +323,18 @@ export default function Home() {
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [user, setUser] = useState<{ name: string; email: string } | null>(null);
 
+  // Hyperspell memory integration
+  const userId = user?.email ?? "anonymous";
+  const { storeSwipe: storeSwipeMemory, storeBet: storeBetMemory } =
+    useBettingMemory({ userId });
+
+  // Nia insights integration
+  const {
+    analysis: niaInsight,
+    loading: insightLoading,
+    fetchInsights,
+  } = useTeamInsights();
+
   // Track all bets per team (teamId → total amount wagered + count)
   const [teamBetTotals, setTeamBetTotals] = useState<
     Record<number, { total: number; count: number }>
@@ -385,6 +399,9 @@ export default function Home() {
   function swipe(choice: "left" | "right") {
     if (!active || direction) return;
 
+    // Store swipe in Hyperspell memory
+    storeSwipeMemory(String(active.id), active.name, choice).catch(() => {});
+
     // Nudge probability on every swipe
     const updatedTeams = roundTeams.map((t) =>
       t.id === active.id ? nudgeScore(t, choice) : t,
@@ -413,6 +430,16 @@ export default function Home() {
   function confirmBets(bets: Bet[]) {
     const totalSpent = bets.reduce((sum, b) => sum + b.amount, 0);
     const totalPayout = bets.reduce((sum, b) => sum + b.potentialPayout, 0);
+
+    // Store each bet in Hyperspell memory
+    for (const bet of bets) {
+      storeBetMemory(
+        String(bet.teamId),
+        bet.teamName,
+        bet.amount,
+        bet.winProbability,
+      ).catch(() => {});
+    }
 
     setPortfolio((prev) => ({
       credits: prev.credits - totalSpent,
@@ -530,7 +557,22 @@ export default function Home() {
             ) : (
               <>
                 {next && <TeamCard team={next} isBehind round={round} key={`behind-${next.id}`} />}
-                {active && <TeamCard team={active} direction={direction} round={round} key={`active-${active.id}`} />}
+                {active && (
+                  <TeamCard
+                    team={active}
+                    direction={direction}
+                    round={round}
+                    key={`active-${active.id}`}
+                    niaInsight={niaInsight}
+                    insightLoading={insightLoading}
+                    onRequestInsight={(t) =>
+                      fetchInsights({
+                        teamName: t.name,
+                        teamDescription: t.building,
+                      })
+                    }
+                  />
+                )}
               </>
             )}
           </div>
@@ -653,11 +695,17 @@ function TeamCard({
   isBehind = false,
   direction = null,
   round = 1,
+  niaInsight = null,
+  insightLoading = false,
+  onRequestInsight,
 }: {
   team: TeamProfile;
   isBehind?: boolean;
   direction?: "left" | "right" | null;
   round?: number;
+  niaInsight?: string | null;
+  insightLoading?: boolean;
+  onRequestInsight?: (team: TeamProfile) => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const totalSwipes = team.totalSwipesRight + team.totalSwipesLeft;
@@ -665,6 +713,13 @@ function TeamCard({
 
   // Round 2 = show details directly (no video)
   const showDetails = round >= 2;
+
+  // Fetch Nia insight when card is shown in Round 2
+  useEffect(() => {
+    if (showDetails && !isBehind && onRequestInsight && !niaInsight && !insightLoading) {
+      onRequestInsight(team);
+    }
+  }, [showDetails, isBehind, team.id]);
 
   return (
     <article
@@ -757,6 +812,17 @@ function TeamCard({
               <strong>{team.judgeFit}</strong>
             </div>
           </div>
+
+          {(niaInsight || insightLoading) && (
+            <div className="profile-section nia-insight">
+              <Sparkles size={17} />
+              {insightLoading ? (
+                <p style={{ opacity: 0.6 }}>Analyzing project with Nia...</p>
+              ) : (
+                <p>{niaInsight}</p>
+              )}
+            </div>
+          )}
 
           <div className="team-list">
             <div className="team-title">
