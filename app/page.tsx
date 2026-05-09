@@ -620,19 +620,6 @@ function TeamCard({
             ))}
           </div>
 
-          <div className="mini-player">
-            <div className="mini-player-label">
-              <Play size={14} />
-              <span>Project demo</span>
-            </div>
-            <video
-              src={team.video}
-              poster={team.image}
-              controls
-              muted
-              playsInline
-            />
-          </div>
         </div>
       )}
     </article>
