@@ -11,9 +11,9 @@ interface TeamInput {
 }
 
 interface AgentScores {
-  competitiveness: number;
-  judgeFit: number;
-  marketability: number;
+  execution: number;
+  statefulness: number;
+  agenticDepth: number;
 }
 
 interface AgentScoresState {
@@ -26,6 +26,7 @@ interface AgentScoresState {
 async function fetchAgentScore(
   endpoint: string,
   body: Record<string, unknown>,
+  scoreKey: string,
 ): Promise<number> {
   try {
     const res = await fetch(endpoint, {
@@ -37,12 +38,7 @@ async function fetchAgentScore(
     const data = await res.json();
     const analysis = data.analysis;
     if (typeof analysis === "object" && analysis !== null) {
-      return (
-        analysis.competitivenessScore ??
-        analysis.judgeFitScore ??
-        analysis.marketabilityScore ??
-        -1
-      );
+      return analysis[scoreKey] ?? -1;
     }
     return -1;
   } catch {
@@ -67,21 +63,22 @@ export function useAgentScores(): AgentScoresState {
       strengths: team.strengths,
     };
 
-    const [comp, judgeFit, market] = await Promise.all([
-      fetchAgentScore("/api/agents/competitiveness", {
-        ...baseBody,
-        allTeams: team.allTeams,
-      }),
-      fetchAgentScore("/api/agents/judge-fit", baseBody),
-      fetchAgentScore("/api/agents/marketability", baseBody),
+    const [execution, statefulness, agenticDepth] = await Promise.all([
+      fetchAgentScore(
+        "/api/agents/competitiveness",
+        { ...baseBody, allTeams: team.allTeams },
+        "executionScore",
+      ),
+      fetchAgentScore("/api/agents/judge-fit", baseBody, "statefulnessScore"),
+      fetchAgentScore("/api/agents/marketability", baseBody, "agenticDepthScore"),
     ]);
 
     setScores((prev) => ({
       ...prev,
       [team.id]: {
-        competitiveness: comp >= 0 ? comp : 0,
-        judgeFit: judgeFit >= 0 ? judgeFit : 0,
-        marketability: market >= 0 ? market : 0,
+        execution: execution >= 0 ? execution : 0,
+        statefulness: statefulness >= 0 ? statefulness : 0,
+        agenticDepth: agenticDepth >= 0 ? agenticDepth : 0,
       },
     }));
 

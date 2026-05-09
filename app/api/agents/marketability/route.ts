@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { generateText } from "ai";
 import { openai } from "@ai-sdk/openai";
+import { JUDGING_RUBRIC } from "@/lib/judging-criteria";
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
@@ -20,15 +21,20 @@ export async function POST(request: NextRequest) {
   const { text } = await generateText({
     model: openai("gpt-4.1"),
     system: [
-      "You are the Marketability Agent for a hackathon betting platform.",
-      "Assess the commercial viability, go-to-market potential, and brand appeal of this project.",
+      "You are the Agentic Depth Agent for a hackathon betting platform.",
+      "Your job is to evaluate criterion #3: Agentic Depth (25% of total score).",
+      "",
+      JUDGING_RUBRIC,
+      "",
+      "Focus ONLY on criterion #3. Evaluate whether the project demonstrates multi-step planning,",
+      "decision-making, failure recovery, plan adaptation, and autonomous reasoning loops.",
+      "",
       "Return a JSON object with these fields:",
-      '- "summary": 2-3 sentence marketability assessment',
-      '- "marketabilityScore": number 0-100',
-      '- "goToMarket": 1 sentence on go-to-market strategy potential',
-      '- "brandAppeal": "low" | "medium" | "high"',
-      '- "scalability": 1 sentence on scaling potential',
-      '- "monetization": array of possible revenue streams',
+      '- "summary": 2-3 sentence assessment of agentic depth',
+      '- "agenticDepthScore": number 0-100 (map the 1-5 rubric to 0-100 scale)',
+      '- "strongPoints": array of strengths in agentic behavior',
+      '- "weakPoints": array of weaknesses or gaps',
+      '- "rubricLevel": number 1-5 matching the rubric level',
       "Return ONLY valid JSON, no markdown.",
     ].join("\n"),
     prompt: [
@@ -42,8 +48,8 @@ export async function POST(request: NextRequest) {
 
   try {
     const analysis = JSON.parse(text);
-    return Response.json({ teamName, agent: "marketability", analysis });
+    return Response.json({ teamName, agent: "agentic-depth", analysis });
   } catch {
-    return Response.json({ teamName, agent: "marketability", analysis: text });
+    return Response.json({ teamName, agent: "agentic-depth", analysis: text });
   }
 }

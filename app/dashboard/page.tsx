@@ -182,11 +182,11 @@ export default function DashboardPage() {
 
             <div className="dash-winner-rings">
               <RingMeter
-                label="Competitiveness"
+                label="Execution"
                 value={winner.competitiveness}
               />
-              <RingMeter label="Alignment" value={winner.alignment} />
-              <RingMeter label="Marketability" value={winner.marketability} />
+              <RingMeter label="Statefulness" value={winner.alignment} />
+              <RingMeter label="Agentic Depth" value={winner.marketability} />
             </div>
           </div>
         ) : (

@@ -772,7 +772,7 @@ function TeamCard({
   insightLoading?: boolean;
   onRequestInsight?: (team: TeamProfile) => void;
   onSwipe?: (choice: "left" | "right") => void;
-  agentScores?: { competitiveness: number; judgeFit: number; marketability: number };
+  agentScores?: { execution: number; statefulness: number; agenticDepth: number };
   agentLoading?: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -780,9 +780,9 @@ function TeamCard({
   const popularity = totalSwipes > 0 ? Math.round((team.totalSwipesRight / totalSwipes) * 100) : 0;
 
   // Use live agent scores when available, fall back to hardcoded values
-  const compScore = agentScores?.competitiveness ?? team.competitiveness;
-  const alignScore = agentScores?.judgeFit ?? team.alignment;
-  const marketScore = agentScores?.marketability ?? team.marketability;
+  const execScore = agentScores?.execution ?? team.competitiveness;
+  const stateScore = agentScores?.statefulness ?? team.alignment;
+  const depthScore = agentScores?.agenticDepth ?? team.marketability;
 
   // Round 2 = show details directly (no video)
   const showDetails = round >= 2;
@@ -818,7 +818,7 @@ function TeamCard({
             />
             {!agentLoading && (
               <div className="winnability-badge">
-                <span className="winnability-value">{Math.round((compScore + alignScore + marketScore) / 3)}%</span>
+                <span className="winnability-value">{Math.round((execScore + stateScore + depthScore) / 3)}%</span>
                 <span className="winnability-label">Win</span>
               </div>
             )}
@@ -831,9 +831,9 @@ function TeamCard({
                 <p className="agent-loading">Agents analyzing...</p>
               ) : (
                 <>
-                  <RingMeter label="Competitiveness" value={compScore} />
-                  <RingMeter label="Alignment" value={alignScore} />
-                  <RingMeter label="Marketability" value={marketScore} />
+                  <RingMeter label="Execution" value={execScore} />
+                  <RingMeter label="Statefulness" value={stateScore} />
+                  <RingMeter label="Agentic Depth" value={depthScore} />
                 </>
               )}
             </div>

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { generateText } from "ai";
 import { openai } from "@ai-sdk/openai";
+import { JUDGING_RUBRIC } from "@/lib/judging-criteria";
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
@@ -8,12 +9,9 @@ export async function POST(request: NextRequest) {
     teams: {
       name: string;
       description: string;
-      competitivenessScore?: number;
-      judgeFitScore?: number;
-      marketabilityScore?: number;
-      codeScore?: number;
-      teamScore?: number;
-      marketScore?: number;
+      executionScore?: number;
+      statefulnessScore?: number;
+      agenticDepthScore?: number;
     }[];
     agentResults?: Record<string, unknown>;
   };
@@ -29,8 +27,17 @@ export async function POST(request: NextRequest) {
     model: openai("gpt-4.1"),
     system: [
       "You are the Final Ranker Agent for a hackathon betting platform.",
-      "Aggregate all agent scores and insights to produce a definitive ranking of teams.",
-      "Weight factors: Competitiveness (25%), Judge Fit (25%), Marketability (20%), Code Quality (15%), Team Strength (15%).",
+      "Aggregate all agent scores to produce a definitive ranking of teams.",
+      "",
+      JUDGING_RUBRIC,
+      "",
+      "Use the EXACT weights from the rubric:",
+      "- Genuine Background Execution: 30%",
+      "- Statefulness: 25%",
+      "- Agentic Depth: 25%",
+      "- Demo & Presentation: 10%",
+      "- Judge's Personal Rating: 10%",
+      "",
       "Return a JSON object with these fields:",
       '- "rankings": array of objects sorted best to worst, each with "rank" (number), "teamName" (string), "finalScore" (number 0-100), "verdict" (1 sentence)',
       '- "topPick": name of the #1 team',
@@ -43,16 +50,18 @@ export async function POST(request: NextRequest) {
       ...teams.map(
         (t) =>
           `- ${t.name}: ${t.description}${
-            t.competitivenessScore != null
-              ? ` | Competitiveness: ${t.competitivenessScore}`
+            t.executionScore != null
+              ? ` | Background Execution: ${t.executionScore}`
               : ""
-          }${t.judgeFitScore != null ? ` | Judge Fit: ${t.judgeFitScore}` : ""}${
-            t.marketabilityScore != null
-              ? ` | Marketability: ${t.marketabilityScore}`
+          }${
+            t.statefulnessScore != null
+              ? ` | Statefulness: ${t.statefulnessScore}`
               : ""
-          }${t.codeScore != null ? ` | Code: ${t.codeScore}` : ""}${
-            t.teamScore != null ? ` | Team: ${t.teamScore}` : ""
-          }${t.marketScore != null ? ` | Market: ${t.marketScore}` : ""}`,
+          }${
+            t.agenticDepthScore != null
+              ? ` | Agentic Depth: ${t.agenticDepthScore}`
+              : ""
+          }`,
       ),
       agentResults ? `\nAdditional agent context: ${JSON.stringify(agentResults)}` : "",
     ]
