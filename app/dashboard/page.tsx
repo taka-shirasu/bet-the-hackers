@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import {
   Crown,
   Star,
@@ -36,10 +36,8 @@ interface TeamProfile {
 /*  Ring meter (reused from main page)                                 */
 /* ------------------------------------------------------------------ */
 
-let ringIdCounter = 0;
-
 function RingMeter({ label, value }: { label: string; value: number }) {
-  const [gradId] = useState(() => `dash-ring-${ringIdCounter++}`);
+  const gradId = useId();
   const size = 100;
   const strokeW = 10;
   const r = (size - strokeW) / 2;

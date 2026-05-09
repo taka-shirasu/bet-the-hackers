@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useRef, useEffect } from "react";
+import { useId, useMemo, useState, useRef, useEffect } from "react";
 import { useBettingMemory } from "@/hooks/use-betting-memory";
 import { useTeamInsights } from "@/hooks/use-team-insights";
 import {
@@ -237,10 +237,8 @@ function nudgeScore(team: TeamProfile, direction: "left" | "right"): TeamProfile
 /*  Gauge meter component                                              */
 /* ------------------------------------------------------------------ */
 
-let ringIdCounter = 0;
-
 function RingMeter({ label, value }: { label: string; value: number }) {
-  const [gradId] = useState(() => `ring-grad-${ringIdCounter++}`);
+  const gradId = useId();
   const size = 100;
   const strokeW = 10;
   const r = (size - strokeW) / 2;
