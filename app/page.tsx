@@ -230,6 +230,61 @@ function nudgeScore(team: TeamProfile, direction: "left" | "right"): TeamProfile
 }
 
 /* ------------------------------------------------------------------ */
+/*  Gauge meter component                                              */
+/* ------------------------------------------------------------------ */
+
+function GaugeMeter({ label, value }: { label: string; value: number }) {
+  const r = 50;
+  const cx = 60;
+  const cy = 58;
+  const startAngle = 180;
+  const endAngle = 0;
+  const sweep = startAngle - endAngle;
+  const needleAngle = startAngle - (value / 100) * sweep;
+  const rad = (needleAngle * Math.PI) / 180;
+  const nx = cx + (r - 6) * Math.cos(rad);
+  const ny = cy - (r - 6) * Math.sin(rad);
+
+  const arcPath = (innerR: number, outerR: number, from: number, to: number) => {
+    const r1 = (from * Math.PI) / 180;
+    const r2 = (to * Math.PI) / 180;
+    const x1o = cx + outerR * Math.cos(r1);
+    const y1o = cy - outerR * Math.sin(r1);
+    const x2o = cx + outerR * Math.cos(r2);
+    const y2o = cy - outerR * Math.sin(r2);
+    const x2i = cx + innerR * Math.cos(r2);
+    const y2i = cy - innerR * Math.sin(r2);
+    const x1i = cx + innerR * Math.cos(r1);
+    const y1i = cy - innerR * Math.sin(r1);
+    return `M${x1o},${y1o} A${outerR},${outerR} 0 0 0 ${x2o},${y2o} L${x2i},${y2i} A${innerR},${innerR} 0 0 1 ${x1i},${y1i} Z`;
+  };
+
+  return (
+    <div className="gauge">
+      <svg viewBox="0 0 120 68" className="gauge-svg">
+        <path d={arcPath(36, r, 180, 120)} fill="#e74c3c" />
+        <path d={arcPath(36, r, 120, 60)} fill="#f1c40f" />
+        <path d={arcPath(36, r, 60, 0)} fill="#2ecc71" />
+        <line
+          x1={cx}
+          y1={cy}
+          x2={nx}
+          y2={ny}
+          stroke="#111"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          className="gauge-needle"
+          style={{ "--needle-angle": `${180 - needleAngle}deg` } as React.CSSProperties}
+        />
+        <circle cx={cx} cy={cy} r="4" fill="#111" />
+      </svg>
+      <div className="gauge-label">{label}</div>
+      <div className="gauge-value">{value}%</div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /*  Main page                                                          */
 /* ------------------------------------------------------------------ */
 
@@ -622,25 +677,10 @@ function TeamCard({
             loop
             playsInline
           />
-          <div className="video-meters">
-            {([
-              ["Competitiveness", team.competitiveness],
-              ["Alignment", team.alignment],
-              ["Marketability", team.marketability],
-            ] as const).map(([label, value]) => (
-              <div className="stat-bar" key={label}>
-                <div className="stat-bar-header">
-                  <span className="stat-bar-label">{label}</span>
-                  <span className="stat-bar-value">{value}%</span>
-                </div>
-                <div className="stat-bar-track">
-                  <div
-                    className="stat-bar-fill"
-                    style={{ "--fill-pct": `${value}%` } as React.CSSProperties}
-                  />
-                </div>
-              </div>
-            ))}
+          <div className="video-gauges">
+            <GaugeMeter label="Competitiveness" value={team.competitiveness} />
+            <GaugeMeter label="Alignment" value={team.alignment} />
+            <GaugeMeter label="Marketability" value={team.marketability} />
           </div>
           <div className="video-overlay">
             <h2 className="video-team-name">{team.name}</h2>
