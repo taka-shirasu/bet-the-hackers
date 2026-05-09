@@ -243,6 +243,9 @@ export default function Home() {
     Record<number, { total: number; count: number }>
   >({});
 
+  // Round 1 winner (stored so we can remove them from Round 2)
+  const [round1Winner, setRound1Winner] = useState<TeamProfile | null>(null);
+
   const active = roundTeams[index];
   const next = roundTeams[index + 1];
   const totalRemaining = winner ? 1 : roundTeams.length - index;
@@ -275,10 +278,36 @@ export default function Home() {
 
   function advanceToNextRound() {
     setShowLeaderboard(false);
-    // Single round — pick the highest-scoring survivor as winner
-    const sorted = [...survivors].sort((a, b) => b.winScore - a.winScore);
-    if (sorted.length > 0) {
-      setWinner(sorted[0]);
+
+    if (round === 1) {
+      // Find the team the user bet on (Round 1 winner)
+      const betTeamIds = portfolio.bets.map((b) => b.teamId);
+      const r1Winner = survivors.find((t) => betTeamIds.includes(t.id)) ?? survivors[0];
+      setRound1Winner(r1Winner);
+
+      // Remove R1 winner from the pool for Round 2
+      const round2Teams = survivors.filter((t) => t.id !== r1Winner.id);
+
+      if (round2Teams.length === 0) {
+        setWinner(r1Winner);
+        return;
+      }
+
+      setRound(2);
+      setRoundTeams(round2Teams);
+      setIndex(0);
+      setSurvivors([]);
+      setEliminated([]);
+    } else {
+      // Round 2 done — pick final winner (the team they bet on)
+      const betTeamIds = portfolio.bets
+        .filter((b) => !round1Winner || b.teamId !== round1Winner.id)
+        .map((b) => b.teamId);
+      const r2Winner = survivors.find((t) => betTeamIds.includes(t.id))
+        ?? survivors.sort((a, b) => b.winScore - a.winScore)[0];
+      if (r2Winner) {
+        setWinner(r2Winner);
+      }
     }
   }
 
@@ -360,6 +389,7 @@ export default function Home() {
     setShowBetScreen(false);
     setShowLeaderboard(false);
     setTeamBetTotals({});
+    setRound1Winner(null);
   }
 
   return (
@@ -428,8 +458,8 @@ export default function Home() {
               <WinnerCard team={winner} onReset={reset} portfolio={portfolio} />
             ) : (
               <>
-                {next && <TeamCard team={next} isBehind />}
-                {active && <TeamCard team={active} direction={direction} />}
+                {next && <TeamCard team={next} isBehind round={round} key={`behind-${next.id}`} />}
+                {active && <TeamCard team={active} direction={direction} round={round} key={`active-${active.id}`} />}
               </>
             )}
           </div>
@@ -551,25 +581,19 @@ function TeamCard({
   team,
   isBehind = false,
   direction = null,
+  round = 1,
 }: {
   team: TeamProfile;
   isBehind?: boolean;
   direction?: "left" | "right" | null;
+  round?: number;
 }) {
-  const [expanded, setExpanded] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const totalSwipes = team.totalSwipesRight + team.totalSwipesLeft;
   const popularity = totalSwipes > 0 ? Math.round((team.totalSwipesRight / totalSwipes) * 100) : 0;
 
-  const handleExpand = () => {
-    if (videoRef.current) videoRef.current.pause();
-    setExpanded(true);
-  };
-
-  const handleCollapse = () => {
-    setExpanded(false);
-    if (videoRef.current) videoRef.current.play();
-  };
+  // Round 2 = show details directly (no video)
+  const showDetails = round >= 2;
 
   return (
     <article
@@ -577,51 +601,42 @@ function TeamCard({
         "bet-card",
         isBehind ? "is-behind" : "",
         direction ? `swipe-${direction}` : "",
-        expanded ? "card-expanded" : "",
+        showDetails ? "card-expanded" : "",
       ].join(" ")}
       style={{ "--accent": team.color } as React.CSSProperties}
     >
-      <div className="video-wrap">
-        <video
-          ref={videoRef}
-          src={team.video}
-          poster={team.image}
-          autoPlay
-          muted
-          loop
-          playsInline
-        />
-        <div className="video-overlay">
-          <h2 className="video-team-name">{team.name}</h2>
-          <p className="video-tagline">{team.tagline}</p>
-          <div className="stat-bar">
-            <div className="stat-bar-header">
-              <span className="stat-bar-label">Win Probability</span>
-              <span className="stat-bar-value">{team.winScore}%</span>
-            </div>
-            <div className="stat-bar-track">
-              <div
-                className="stat-bar-fill"
-                style={{ "--fill-pct": `${team.winScore}%` } as React.CSSProperties}
-              />
+      {!showDetails && (
+        <div className="video-wrap">
+          <video
+            ref={videoRef}
+            src={team.video}
+            poster={team.image}
+            autoPlay
+            muted
+            loop
+            playsInline
+          />
+          <div className="video-overlay">
+            <h2 className="video-team-name">{team.name}</h2>
+            <p className="video-tagline">{team.tagline}</p>
+            <div className="stat-bar">
+              <div className="stat-bar-header">
+                <span className="stat-bar-label">Win Probability</span>
+                <span className="stat-bar-value">{team.winScore}%</span>
+              </div>
+              <div className="stat-bar-track">
+                <div
+                  className="stat-bar-fill"
+                  style={{ "--fill-pct": `${team.winScore}%` } as React.CSSProperties}
+                />
+              </div>
             </div>
           </div>
         </div>
-        {!expanded && (
-          <button className="expand-trigger" onClick={handleExpand}>
-            <ChevronDown size={18} />
-            Tap for details
-          </button>
-        )}
-      </div>
+      )}
 
-      {expanded && (
+      {showDetails && (
         <div className="card-body card-body-expandable">
-          <button className="collapse-btn" onClick={handleCollapse}>
-            <Play size={14} />
-            Back to video
-          </button>
-
           <div className="identity">
             <div>
               <h2>{team.name}</h2>
@@ -693,7 +708,6 @@ function TeamCard({
               </a>
             ))}
           </div>
-
         </div>
       )}
     </article>
@@ -960,10 +974,10 @@ function LeaderboardOverlay({
         <div className="leaderboard-header">
           <Award size={24} />
           <p className="eyebrow" style={{ color: "#fff", marginBottom: 0 }}>
-            Betting Complete
+            Round {round} Complete
           </p>
           <h2>Leaderboard</h2>
-          <p>{portfolio.bets.length} bets placed</p>
+          <p>{portfolio.bets.length} bet{portfolio.bets.length !== 1 ? "s" : ""} placed</p>
         </div>
 
         <div className="leaderboard-entries">
@@ -1002,7 +1016,7 @@ function LeaderboardOverlay({
 
         <button className="primary-action leaderboard-next" onClick={onNext}>
           <ArrowRight size={18} />
-          See final results
+          {round === 1 ? "Continue to Round 2" : "See final results"}
         </button>
       </div>
     </div>
