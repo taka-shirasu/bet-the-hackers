@@ -249,7 +249,7 @@ h1 {
 }
 
 .card-expanded .video-wrap {
-  flex: 0 0 200px;
+  display: none;
 }
 
 .video-wrap video {
