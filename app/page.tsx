@@ -792,11 +792,9 @@ function TeamCard({
   const c2Score = agentScores?.criterion2 ?? team.alignment;
   const c3Score = agentScores?.criterion3 ?? team.marketability;
 
-  // Get track-specific criterion labels (fallback to always-on-agents for old data)
-  const trackCriteria = TRACK_CRITERIA[team.track ?? "always-on-agents"];
-  const label1 = trackCriteria[0].name;
-  const label2 = trackCriteria[1].name;
-  const label3 = trackCriteria[2].name;
+  const label1 = "Competitiveness";
+  const label2 = "Alignment";
+  const label3 = "Marketability";
 
   // Round 2 = show details directly (no video)
   const showDetails = round >= 2;
