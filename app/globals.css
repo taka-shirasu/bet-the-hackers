@@ -9,11 +9,16 @@
 
 * {
   box-sizing: border-box;
+  scrollbar-width: none;
+}
+*::-webkit-scrollbar {
+  display: none;
 }
 
 html,
 body {
   min-height: 100%;
+  overflow: hidden;
 }
 
 body {
@@ -357,7 +362,7 @@ h1 {
 .card-body-expandable {
   animation: slide-up 250ms ease-out;
   overflow-y: auto;
-  max-height: 60vh;
+  max-height: 55vh;
 }
 
 @keyframes slide-up {
