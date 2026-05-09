@@ -238,6 +238,135 @@ h1 {
   width: 100%;
 }
 
+/* ---- Video-first card layout ---- */
+
+.video-wrap {
+  background: #0a0a0a;
+  position: relative;
+  flex: 1 1 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.card-expanded .video-wrap {
+  flex: 0 0 200px;
+}
+
+.video-wrap video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.video-wrap::after {
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.2) 40%, transparent 70%);
+  content: "";
+  inset: 0;
+  position: absolute;
+  pointer-events: none;
+}
+
+.video-overlay {
+  position: absolute;
+  bottom: 56px;
+  left: 18px;
+  right: 80px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.video-team-name {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 0;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.video-tagline {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 4px 0 0;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.card-expanded .video-overlay {
+  bottom: 12px;
+}
+
+.card-expanded .video-team-name {
+  font-size: 1.1rem;
+}
+
+.card-expanded .video-tagline {
+  display: none;
+}
+
+.expand-trigger {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 8px 16px;
+  cursor: pointer;
+  animation: bounce-hint 2s ease-in-out infinite;
+}
+
+.expand-trigger:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+@keyframes bounce-hint {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-4px); }
+}
+
+.collapse-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  cursor: pointer;
+  margin-bottom: 4px;
+  width: fit-content;
+}
+
+.collapse-btn:hover {
+  color: var(--ink);
+  border-color: var(--accent);
+}
+
+.card-body-expandable {
+  animation: slide-up 250ms ease-out;
+  overflow-y: auto;
+  max-height: 60vh;
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- end video-first ---- */
+
 .odds-pill {
   background: var(--accent);
   border-radius: 999px;
