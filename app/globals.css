@@ -180,7 +180,7 @@ h1 {
   min-height: 650px;
   position: relative;
   width: min(100%, 500px);
-  background: linear-gradient(to bottom, #ffffff 0%, #f5c28a 50%, #e8915a 100%);
+  background: linear-gradient(to bottom, #ffffff 0%, #f0b07a 40%, #e8915a 70%, #e8915a 100%);
   border-radius: 14px;
   padding: 10px;
 }
