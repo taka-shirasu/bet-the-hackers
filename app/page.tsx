@@ -774,6 +774,7 @@ function TeamCard({
   agentLoading?: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [expanded, setExpanded] = useState(false);
   const totalSwipes = team.totalSwipesRight + team.totalSwipesLeft;
   const popularity = totalSwipes > 0 ? Math.round((team.totalSwipesRight / totalSwipes) * 100) : 0;
 
@@ -786,10 +787,9 @@ function TeamCard({
   const label2 = "Alignment";
   const label3 = "Marketability";
 
-  // Round 2 = show details directly (no video)
-  const showDetails = round >= 2;
+  const showDetails = expanded;
 
-  // Fetch Nia insight when card is shown in Round 2
+  // Fetch Nia insight when expanded
   useEffect(() => {
     if (showDetails && !isBehind && onRequestInsight && !niaInsight && !insightLoading) {
       onRequestInsight(team);
@@ -839,6 +839,15 @@ function TeamCard({
                 </>
               )}
             </div>
+            {!isBehind && (
+              <button
+                className="view-details-btn"
+                onClick={() => setExpanded(true)}
+                type="button"
+              >
+                View Details
+              </button>
+            )}
             {onSwipe && !isBehind && (
               <div className="card-actions">
                 <button
@@ -863,6 +872,13 @@ function TeamCard({
 
       {showDetails && (
         <div className="card-body card-body-expandable">
+          <button
+            className="collapse-btn"
+            onClick={() => setExpanded(false)}
+            type="button"
+          >
+            <X size={16} /> Back
+          </button>
           <div className="identity">
             <div>
               <h2>{team.name}</h2>

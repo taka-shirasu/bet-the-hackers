@@ -372,6 +372,23 @@ h1 {
   50% { opacity: 1; }
 }
 
+.view-details-btn {
+  background: none;
+  border: 1px solid var(--muted);
+  border-radius: 20px;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 5px 16px;
+  transition: background 150ms, border-color 150ms;
+}
+
+.view-details-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: var(--ink);
+}
+
 .card-actions {
   display: flex;
   gap: 18px;
