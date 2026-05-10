@@ -1169,3 +1169,281 @@ h1 {
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+.agent-shell {
+  margin: 0 auto;
+  max-width: 1240px;
+  padding: 10px 0 64px;
+}
+
+.agent-hero {
+  align-items: flex-end;
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.agent-hero h1 {
+  font-size: clamp(2rem, 4.2vw, 3.6rem);
+  line-height: 0.98;
+  max-width: 780px;
+}
+
+.agent-map {
+  background: rgba(255, 253, 248, 0.72);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  padding: 12px;
+}
+
+.graph-canvas {
+  height: min(66vh, 610px);
+  min-height: 520px;
+  min-width: 0;
+  position: relative;
+  width: 100%;
+}
+
+.graph-lines {
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+  position: absolute;
+}
+
+.graph-lines path {
+  fill: none;
+  opacity: 0.44;
+  stroke: #4a4540;
+  stroke-linecap: round;
+  stroke-width: 0.28;
+}
+
+.graph-lines marker path {
+  fill: #4a4540;
+}
+
+.graph-node {
+  background: #fffdf8;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 10px 28px rgba(20, 20, 20, 0.11);
+  display: grid;
+  gap: 7px;
+  min-height: 108px;
+  padding: 12px;
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: clamp(138px, 13.2vw, 166px);
+  z-index: 1;
+}
+
+.graph-node-head {
+  align-items: center;
+  display: flex;
+  gap: 7px;
+}
+
+.graph-node-head span {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.graph-node strong {
+  font-size: clamp(0.82rem, 1vw, 0.98rem);
+  line-height: 1.05;
+}
+
+.graph-node p {
+  color: var(--muted);
+  font-size: clamp(0.68rem, 0.82vw, 0.78rem);
+  line-height: 1.28;
+}
+
+.graph-data {
+  border-color: rgba(18, 184, 134, 0.38);
+}
+
+.graph-data svg {
+  color: #0a8f6a;
+}
+
+.graph-tool {
+  border-color: rgba(245, 159, 0, 0.42);
+}
+
+.graph-tool svg {
+  color: #b9761e;
+}
+
+.graph-memory {
+  border-color: rgba(124, 58, 237, 0.38);
+}
+
+.graph-memory svg {
+  color: #6d28d9;
+}
+
+.graph-agent {
+  border-color: rgba(255, 68, 88, 0.36);
+}
+
+.graph-agent svg {
+  color: #b42335;
+}
+
+.graph-output {
+  border-color: rgba(34, 139, 230, 0.36);
+}
+
+.graph-output svg {
+  color: #1971c2;
+}
+
+.agent-legend {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 16px 0;
+}
+
+.integration-tile {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 10px 28px rgba(20, 20, 20, 0.08);
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+}
+
+.integration-tile > div {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.integration-tile p {
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.integration-tile > span {
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 900;
+  justify-self: start;
+  padding: 4px 9px;
+  text-transform: uppercase;
+}
+
+.integration-live > span {
+  background: rgba(18, 184, 134, 0.12);
+  color: #0a8f6a;
+}
+
+.integration-stub > span {
+  background: rgba(180, 35, 53, 0.08);
+  color: #b42335;
+}
+
+.integration-live svg {
+  color: #0a8f6a;
+}
+
+.integration-stub svg {
+  color: #b42335;
+}
+
+.agent-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 16px;
+}
+
+.agent-panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 10px 28px rgba(20, 20, 20, 0.08);
+  padding: 18px;
+}
+
+.agent-panel h2 {
+  font-size: 1rem;
+  margin-bottom: 14px;
+  text-transform: uppercase;
+}
+
+.pillar-line {
+  align-items: flex-start;
+  border-top: 1px solid var(--line);
+  display: flex;
+  gap: 10px;
+  padding: 12px 0;
+}
+
+.pillar-line:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.pillar-line svg {
+  color: #ff4458;
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.pillar-line p {
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.35;
+  margin-top: 3px;
+}
+
+.mini-score-list,
+.mini-evidence-list {
+  display: grid;
+  gap: 10px;
+}
+
+.mini-score,
+.mini-evidence {
+  align-items: center;
+  background: #f7f1e8;
+  border-radius: 8px;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 12px;
+}
+
+.mini-score span,
+.mini-evidence span {
+  color: #b42335;
+  font-weight: 900;
+}
+
+@media (max-width: 900px) {
+  .agent-hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .agent-legend,
+  .agent-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .graph-canvas {
+    height: 640px;
+    min-width: 860px;
+  }
+}

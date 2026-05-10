@@ -22,40 +22,49 @@ export async function deepResearch(
       result: {
         query,
         summary:
-          `[stub] Nia oracle research disabled — set NIA_API_KEY. ` +
-          `Heuristic placeholder: query "${query.slice(0, 80)}..." would return TAM, ` +
-          `competitor list, and risk factors.`,
+          `[stub] Nia research disabled — set NIA_API_KEY. ` +
+          `Heuristic placeholder for "${query.slice(0, 80)}..."`,
         citations: []
       },
       mode: "stub"
     };
   }
 
-  const response = await fetch(`${NIA_BASE}/research`, {
+  const response = await fetch(`${NIA_BASE}/web-search`, {
     method: "POST",
     headers: {
       authorization: `Bearer ${process.env.NIA_API_KEY}`,
       "content-type": "application/json"
     },
-    body: JSON.stringify({ query, mode: "oracle" })
+    body: JSON.stringify({ query })
   });
 
   if (!response.ok) {
     throw new Error(`Nia ${response.status}: ${(await response.text()).slice(0, 200)}`);
   }
 
+  type NiaItem = { url?: string; title?: string; summary?: string };
   const data = (await response.json()) as {
-    summary?: string;
-    answer?: string;
-    citations?: { title?: string; url?: string }[];
-    sources?: { title?: string; url?: string }[];
+    other_content?: NiaItem[];
+    documentation?: NiaItem[];
+    github_repos?: NiaItem[];
   };
+
+  const items: NiaItem[] = [
+    ...(data.other_content ?? []),
+    ...(data.documentation ?? []),
+    ...(data.github_repos ?? [])
+  ].slice(0, 8);
+
+  const summary = items
+    .map((i, idx) => `[${idx + 1}] ${i.title ?? "(untitled)"}\n${i.summary ?? ""}`)
+    .join("\n\n");
 
   return {
     result: {
       query,
-      summary: data.summary ?? data.answer ?? "",
-      citations: data.citations ?? data.sources ?? []
+      summary: summary || "(no web results)",
+      citations: items.map((i) => ({ title: i.title, url: i.url }))
     },
     mode: "live"
   };

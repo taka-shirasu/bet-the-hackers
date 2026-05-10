@@ -1,16 +1,21 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Activity,
   AlertCircle,
+  BadgeCheck,
   Brain,
   CheckCircle2,
+  ClipboardList,
   Database,
+  FileSearch,
   Globe,
   Network,
   Play,
+  Search,
   Sparkles,
+  Target,
   Users
 } from "lucide-react";
 
@@ -27,6 +32,39 @@ type DashboardData = {
   scores: TeamScore[];
   evidence: EvidenceRecord[];
 };
+
+type GraphNode = {
+  id: string;
+  title: string;
+  eyebrow: string;
+  detail: string;
+  lane: "data" | "tool" | "memory" | "agent" | "output";
+  icon: React.ReactNode;
+  x: number;
+  y: number;
+};
+
+const edges = [
+  ["teams", "mongodb"],
+  ["judges", "mongodb"],
+  ["market", "mongodb"],
+  ["teams", "apify"],
+  ["judges", "apify"],
+  ["market", "apify"],
+  ["judges", "nia"],
+  ["market", "nia"],
+  ["apify", "hyperspell"],
+  ["nia", "hyperspell"],
+  ["mongodb", "hyperspell"],
+  ["hyperspell", "teamAgent"],
+  ["hyperspell", "judgeAgent"],
+  ["hyperspell", "marketAgent"],
+  ["teamAgent", "ranker"],
+  ["judgeAgent", "ranker"],
+  ["marketAgent", "ranker"],
+  ["ranker", "scores"],
+  ["scores", "swipe"]
+] as const;
 
 export default function AgentDashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
@@ -45,9 +83,145 @@ export default function AgentDashboardPage() {
 
   useEffect(() => {
     refresh();
-    const id = setInterval(refresh, 8000);
-    return () => clearInterval(id);
+    const id = window.setInterval(refresh, 8000);
+    return () => window.clearInterval(id);
   }, [refresh]);
+
+  const nodes = useMemo<GraphNode[]>(
+    () => [
+      {
+        id: "teams",
+        title: "Team data",
+        eyebrow: "pillar 01",
+        detail: "submission, pitch, industry, members, LinkedIn URLs",
+        lane: "data",
+        icon: <Users size={18} />,
+        x: 9,
+        y: 14
+      },
+      {
+        id: "judges",
+        title: "Judge data",
+        eyebrow: "pillar 02",
+        detail: "judge bios, interests, criteria, preference signals",
+        lane: "data",
+        icon: <BadgeCheck size={18} />,
+        x: 9,
+        y: 42
+      },
+      {
+        id: "market",
+        title: "Marketability data",
+        eyebrow: "pillar 03",
+        detail: "competitors, buyers, category demand, scale risk",
+        lane: "data",
+        icon: <Globe size={18} />,
+        x: 9,
+        y: 70
+      },
+      {
+        id: "mongodb",
+        title: "MongoDB / Prisma",
+        eyebrow: "app database",
+        detail: `${data?.counts.submissions ?? 0} submissions, ${data?.counts.judges ?? 0} judges, ${data?.counts.scores ?? 0} scores`,
+        lane: "output",
+        icon: <Database size={18} />,
+        x: 25,
+        y: 26
+      },
+      {
+        id: "apify",
+        title: "Apify",
+        eyebrow: "scraper",
+        detail: "scrapes LinkedIn-style profiles, judge pages, competitor pages",
+        lane: "tool",
+        icon: <FileSearch size={18} />,
+        x: 25,
+        y: 60
+      },
+      {
+        id: "nia",
+        title: "Nia",
+        eyebrow: "research",
+        detail: "deep research over judges, markets, competitors, optional GitHub",
+        lane: "tool",
+        icon: <Search size={18} />,
+        x: 42,
+        y: 60
+      },
+      {
+        id: "hyperspell",
+        title: "Hyperspell",
+        eyebrow: "memory",
+        detail: `${data?.counts.evidence ?? 0} evidence memories for agents to read`,
+        lane: "memory",
+        icon: <Network size={18} />,
+        x: 42,
+        y: 26
+      },
+      {
+        id: "teamAgent",
+        title: "Competitiveness agent",
+        eyebrow: "score",
+        detail: "compares teams against the participant field",
+        lane: "agent",
+        icon: <Users size={18} />,
+        x: 60,
+        y: 14
+      },
+      {
+        id: "judgeAgent",
+        title: "Judge-fit agent",
+        eyebrow: "score",
+        detail: "predicts which teams judges are likely to favor",
+        lane: "agent",
+        icon: <Target size={18} />,
+        x: 60,
+        y: 42
+      },
+      {
+        id: "marketAgent",
+        title: "Marketability agent",
+        eyebrow: "score",
+        detail: "scores demand, scale, differentiation, and risk",
+        lane: "agent",
+        icon: <Globe size={18} />,
+        x: 60,
+        y: 70
+      },
+      {
+        id: "ranker",
+        title: "Final ranker",
+        eyebrow: "orchestrator",
+        detail: "combines three scores into one overall likelihood",
+        lane: "agent",
+        icon: <Brain size={18} />,
+        x: 76,
+        y: 42
+      },
+      {
+        id: "scores",
+        title: "Cached team cards",
+        eyebrow: "MongoDB",
+        detail: "overall, field, judge, market scores + reasons",
+        lane: "output",
+        icon: <ClipboardList size={18} />,
+        x: 90,
+        y: 30
+      },
+      {
+        id: "swipe",
+        title: "Swipe UI",
+        eyebrow: "product",
+        detail: "fast reads only; no live research on swipe",
+        lane: "output",
+        icon: <Sparkles size={18} />,
+        x: 90,
+        y: 62
+      }
+    ],
+    [data]
+  );
 
   async function runScoreAll() {
     setScoring(true);
@@ -69,252 +243,190 @@ export default function AgentDashboardPage() {
   if (!data) {
     return (
       <main className="shell">
-        <p className="muted">Loading agent dashboard...</p>
+        <p className="muted">Loading agent knowledge graph...</p>
       </main>
     );
   }
 
   return (
     <main className="shell">
-      <section className="dash-shell">
-        <header className="form-header">
-          <p className="eyebrow">Agent dashboard</p>
-          <h1>Knowledge graph, live.</h1>
-          <p className="muted">
-            Three data pillars feed a memory layer. Four agents score every team.
-            Final scores cache in MongoDB for the swipe deck.
-          </p>
-        </header>
-
-        <div className="dash-actions">
-          <button
-            className="primary-action"
-            onClick={runScoreAll}
-            disabled={scoring}
-          >
+      <section className="agent-shell">
+        <header className="agent-hero">
+          <div>
+            <div className="brand-mark" aria-label="nozomio">
+              <img src="/nozomio-logo.png" alt="" />
+              <span>nozomio</span>
+            </div>
+            <p className="eyebrow">Agent knowledge graph</p>
+            <h1>How evidence becomes a winner prediction.</h1>
+          </div>
+          <button className="primary-action" onClick={runScoreAll} disabled={scoring}>
             <Play size={18} />
-            {scoring ? "Scoring all teams..." : "Score all teams"}
+            {scoring ? "Scoring..." : "Score all teams"}
           </button>
-          <span className="muted">Auto-refreshes every 8s</span>
-        </div>
+        </header>
 
         {error && <p className="form-error">{error}</p>}
 
-        <h2 className="dash-h2">Data pillars</h2>
-        <div className="pillar-grid">
-          <PillarCard icon={<Database size={20} />} label="MongoDB" tone="store">
-            <PillarStat label="Submissions" value={data.counts.submissions} />
-            <PillarStat label="Judges" value={data.counts.judges} />
-            <PillarStat label="Cached scores" value={data.counts.scores} />
-          </PillarCard>
-          <PillarCard
-            icon={<Users size={20} />}
-            label="Apify · LinkedIn"
-            tone="ingest"
-          >
-            <IntegrationBadge i={find(data.integrations, "apify")} />
-          </PillarCard>
-          <PillarCard
-            icon={<Globe size={20} />}
-            label="Nia · Oracle research"
-            tone="ingest"
-          >
-            <IntegrationBadge i={find(data.integrations, "nia")} />
-          </PillarCard>
-          <PillarCard
-            icon={<Network size={20} />}
-            label="Hyperspell · Memory"
-            tone="memory"
-          >
-            <IntegrationBadge i={find(data.integrations, "hyperspell")} />
-            <PillarStat label="Evidence records" value={data.counts.evidence} />
-          </PillarCard>
-          <PillarCard
-            icon={<Brain size={20} />}
-            label="OpenAI · Orchestration"
-            tone="agent"
-          >
-            <IntegrationBadge i={find(data.integrations, "openai")} />
-          </PillarCard>
-        </div>
+        <section className="agent-map" aria-label="Agent knowledge graph">
+          <GraphCanvas nodes={nodes} />
+        </section>
 
-        <h2 className="dash-h2">Knowledge flow</h2>
-        <div className="flow">
-          <FlowNode tone="store" label="MongoDB" detail="raw" />
-          <FlowArrow />
-          <FlowNode tone="ingest" label="Apify + Nia" detail="enrich" />
-          <FlowArrow />
-          <FlowNode tone="memory" label="Hyperspell" detail="evidence" />
-          <FlowArrow />
-          <FlowNode tone="agent" label="Agents" detail="score" />
-          <FlowArrow />
-          <FlowNode tone="store" label="MongoDB" detail="scores" />
-        </div>
+        <section className="agent-legend" aria-label="Integration status">
+          <IntegrationTile i={find(data.integrations, "apify")} label="Apify scrapes LinkedIn/profile and market pages." />
+          <IntegrationTile i={find(data.integrations, "nia")} label="Nia researches judges, markets, competitors, and optional repos." />
+          <IntegrationTile i={find(data.integrations, "hyperspell")} label="Hyperspell stores the evidence agents read and write." />
+          <IntegrationTile i={find(data.integrations, "openai")} label="OpenAI turns evidence into structured scoring outputs." />
+        </section>
 
-        <h2 className="dash-h2">Latest scores</h2>
-        {data.scores.length === 0 ? (
-          <p className="muted">
-            No scores yet — collect at least one submission and click
-            "Score all teams".
-          </p>
-        ) : (
-          <div className="score-grid">
-            {data.scores.map((s) => (
-              <ScoreCard key={s.teamId} score={s} />
-            ))}
-          </div>
-        )}
+        <section className="agent-grid">
+          <article className="agent-panel">
+            <h2>Data pillars</h2>
+            <PillarLine icon={<Users size={18} />} title="Team" detail="Raw submission, pitch, industry, members, public links." />
+            <PillarLine icon={<BadgeCheck size={18} />} title="Judge" detail="Judge bios, interests, criteria, rubric, decision patterns." />
+            <PillarLine icon={<Globe size={18} />} title="Market" detail="Competitors, buyer pain, market size, scale potential." />
+          </article>
 
-        <h2 className="dash-h2">Recent evidence</h2>
-        {data.evidence.length === 0 ? (
-          <p className="muted">
-            No evidence stored yet. Scoring populates the memory layer.
-          </p>
-        ) : (
-          <div className="evidence-list">
-            {data.evidence.map((e, i) => (
-              <article key={i} className="evidence-row">
-                <header>
-                  <strong>{e.namespace}</strong>
-                  <span className="evidence-source">{e.source}</span>
-                  <small>{new Date(e.storedAt).toLocaleString()}</small>
-                </header>
-                <pre>{e.content.slice(0, 300)}{e.content.length > 300 ? "..." : ""}</pre>
-              </article>
-            ))}
-          </div>
-        )}
+          <article className="agent-panel">
+            <h2>Scoring outputs</h2>
+            <PillarLine icon={<Sparkles size={18} />} title="Overall" detail="0-100 projected likelihood of winning." />
+            <PillarLine icon={<Users size={18} />} title="Competitiveness" detail="Why this team can beat the other participants." />
+            <PillarLine icon={<Target size={18} />} title="Judge fit" detail="Which judges are likely to pick it and why." />
+            <PillarLine icon={<Globe size={18} />} title="Marketability" detail="Whether the idea can become a real scalable product." />
+          </article>
+        </section>
+
+        <section className="agent-grid">
+          <article className="agent-panel">
+            <h2>Latest scores</h2>
+            {data.scores.length === 0 ? (
+              <p className="muted">No scored teams yet.</p>
+            ) : (
+              <div className="mini-score-list">
+                {data.scores.slice(0, 5).map((score) => (
+                  <div className="mini-score" key={score.teamId}>
+                    <strong>{score.teamName}</strong>
+                    <span>{score.overall}/100</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </article>
+
+          <article className="agent-panel">
+            <h2>Recent evidence</h2>
+            {data.evidence.length === 0 ? (
+              <p className="muted">No evidence stored yet. Run scoring after submissions arrive.</p>
+            ) : (
+              <div className="mini-evidence-list">
+                {data.evidence.slice(0, 4).map((e, index) => (
+                  <div className="mini-evidence" key={`${e.namespace}-${index}`}>
+                    <strong>{e.namespace}</strong>
+                    <span>{e.source}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </article>
+        </section>
       </section>
     </main>
   );
 }
 
-function find(list: IntegrationStatus[], name: IntegrationStatus["name"]) {
-  return list.find((i) => i.name === name)!;
+function GraphCanvas({ nodes }: { nodes: GraphNode[] }) {
+  const byId = new Map(nodes.map((node) => [node.id, node]));
+
+  return (
+    <div className="graph-canvas">
+      <svg className="graph-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
+        <defs>
+          <marker id="arrowhead" markerHeight="5" markerWidth="5" orient="auto" refX="4" refY="2.5">
+            <path d="M0,0 L5,2.5 L0,5 Z" />
+          </marker>
+        </defs>
+        {edges.map(([from, to]) => {
+          const a = byId.get(from);
+          const b = byId.get(to);
+          if (!a || !b) return null;
+          return (
+            <path
+              d={curve(a.x, a.y, b.x, b.y)}
+              key={`${from}-${to}`}
+              markerEnd="url(#arrowhead)"
+            />
+          );
+        })}
+      </svg>
+
+      {nodes.map((node) => (
+        <article
+          className={`graph-node graph-${node.lane}`}
+          key={node.id}
+          style={{ left: `${node.x}%`, top: `${node.y}%` }}
+        >
+          <div className="graph-node-head">
+            {node.icon}
+            <span>{node.eyebrow}</span>
+          </div>
+          <strong>{node.title}</strong>
+          <p>{node.detail}</p>
+        </article>
+      ))}
+    </div>
+  );
 }
 
-function PillarCard({
+function curve(x1: number, y1: number, x2: number, y2: number) {
+  const mid = Math.max(8, Math.abs(x2 - x1) * 0.45);
+  return `M ${x1} ${y1} C ${x1 + mid} ${y1}, ${x2 - mid} ${y2}, ${x2} ${y2}`;
+}
+
+function find(list: IntegrationStatus[], name: IntegrationStatus["name"]) {
+  return list.find((i) => i.name === name) ?? {
+    name,
+    configured: false,
+    mode: "stub",
+    envVar: `${name.toUpperCase()}_API_KEY`
+  };
+}
+
+function IntegrationTile({ i, label }: { i: IntegrationStatus; label: string }) {
+  return (
+    <article className={`integration-tile integration-${i.mode}`}>
+      <div>
+        {i.mode === "live" ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+        <strong>{displayName(i.name)}</strong>
+      </div>
+      <p>{label}</p>
+      <span>{i.mode === "live" ? "Live" : `Set ${i.envVar}`}</span>
+    </article>
+  );
+}
+
+function PillarLine({
   icon,
-  label,
-  tone,
-  children
+  title,
+  detail
 }: {
   icon: React.ReactNode;
-  label: string;
-  tone: "store" | "ingest" | "memory" | "agent";
-  children: React.ReactNode;
-}) {
-  return (
-    <article className={`pillar-card pillar-${tone}`}>
-      <header>
-        {icon}
-        <strong>{label}</strong>
-      </header>
-      <div className="pillar-body">{children}</div>
-    </article>
-  );
-}
-
-function PillarStat({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="pillar-stat">
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
-  );
-}
-
-function IntegrationBadge({ i }: { i: IntegrationStatus }) {
-  return (
-    <div className={`int-badge int-${i.mode}`}>
-      {i.mode === "live" ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
-      <span>{i.mode === "live" ? "Live" : `Stub — set ${i.envVar}`}</span>
-    </div>
-  );
-}
-
-function FlowNode({
-  label,
-  detail,
-  tone
-}: {
-  label: string;
+  title: string;
   detail: string;
-  tone: "store" | "ingest" | "memory" | "agent";
 }) {
   return (
-    <div className={`flow-node flow-${tone}`}>
-      <strong>{label}</strong>
-      <small>{detail}</small>
+    <div className="pillar-line">
+      {icon}
+      <div>
+        <strong>{title}</strong>
+        <p>{detail}</p>
+      </div>
     </div>
   );
 }
 
-function FlowArrow() {
-  return <span className="flow-arrow" aria-hidden>→</span>;
-}
-
-function ScoreCard({ score }: { score: TeamScore }) {
-  return (
-    <article className="score-card">
-      {score.imageUrl && (
-        <img className="score-card-image" src={score.imageUrl} alt={`${score.teamName} cover`} />
-      )}
-      <header>
-        <h3>{score.teamName}</h3>
-        <div className="score-overall">
-          <Sparkles size={16} />
-          <strong>{score.overall}</strong>
-          <span>/100</span>
-        </div>
-      </header>
-      <div className="score-bars">
-        <ScoreBar label="Competitiveness" value={score.competitiveness} blurb={score.blurbs.competitiveness} />
-        <ScoreBar label="Judge fit" value={score.judgeFit} blurb={score.blurbs.judgeFit} />
-        <ScoreBar label="Marketability" value={score.marketability} blurb={score.blurbs.marketability} />
-      </div>
-      <div className="step-list">
-        {score.steps.map((s) => (
-          <StepRow key={s.agent} step={s} />
-        ))}
-      </div>
-    </article>
-  );
-}
-
-function ScoreBar({
-  label,
-  value,
-  blurb
-}: {
-  label: string;
-  value: number;
-  blurb: string;
-}) {
-  return (
-    <div className="score-bar">
-      <div className="score-bar-head">
-        <span>{label}</span>
-        <strong>{value}/10</strong>
-      </div>
-      <div className="score-bar-track">
-        <span style={{ width: `${value * 10}%` }} />
-      </div>
-      <p className="muted">{blurb}</p>
-    </div>
-  );
-}
-
-function StepRow({ step }: { step: AgentStepResult }) {
-  const Icon =
-    step.status === "ok" ? CheckCircle2 :
-    step.status === "error" ? AlertCircle : Activity;
-  return (
-    <div className={`step-row step-${step.status}`}>
-      <Icon size={14} />
-      <span>{step.agent}</span>
-      {step.durationMs !== undefined && <small>{step.durationMs}ms</small>}
-      {step.message && <small className="step-msg">{step.message}</small>}
-    </div>
-  );
+function displayName(name: IntegrationStatus["name"]) {
+  if (name === "nia") return "Nia";
+  if (name === "apify") return "Apify";
+  if (name === "hyperspell") return "Hyperspell";
+  return "OpenAI";
 }

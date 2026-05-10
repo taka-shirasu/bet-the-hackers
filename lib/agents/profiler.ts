@@ -20,7 +20,17 @@ export async function profileTeam(
   submission: Submission & { teamId: string }
 ): Promise<{ enriched: EnrichedTeam; mode: "live" | "stub"; imageMode: "live" | "stub" }> {
   const linkedinUrls = submission.members.map((m) => m.linkedin).filter(Boolean);
-  const { profiles, mode } = await scrapeLinkedInProfiles(linkedinUrls);
+  let profiles: Awaited<ReturnType<typeof scrapeLinkedInProfiles>>["profiles"] = [];
+  let mode: "live" | "stub" = "stub";
+  try {
+    const result = await scrapeLinkedInProfiles(linkedinUrls);
+    profiles = result.profiles;
+    mode = result.mode;
+  } catch (error) {
+    console.error("Apify enrichment failed; continuing without it.", error);
+    profiles = linkedinUrls.map((url) => ({ url }));
+    mode = "stub";
+  }
 
   const merged = submission.members.map((m) => {
     const profile = profiles.find((p) => p.url === m.linkedin);

@@ -17,24 +17,24 @@ export async function storeEvidence(records: EvidenceRecord[]): Promise<void> {
 
   if (hyperspellMode() === "live") {
     try {
-      const response = await fetch(`${HYPERSPELL_BASE}/v1/memories/bulk`, {
-        method: "POST",
-        headers: {
-          authorization: `Bearer ${process.env.HYPERSPELL_API_KEY}`,
-          "content-type": "application/json"
-        },
-        body: JSON.stringify({
-          memories: records.map((r) => ({
-            content: r.content,
+      for (const r of records) {
+        const response = await fetch(`${HYPERSPELL_BASE}/memories/add`, {
+          method: "POST",
+          headers: {
+            authorization: `Bearer ${process.env.HYPERSPELL_API_KEY}`,
+            "content-type": "application/json"
+          },
+          body: JSON.stringify({
+            text: r.content,
             user_id: r.namespace,
             metadata: { ...r.metadata, source: r.source, key: r.key }
-          }))
-        })
-      });
-      if (!response.ok) {
-        throw new Error(
-          `Hyperspell ${response.status}: ${(await response.text()).slice(0, 200)}`
-        );
+          })
+        });
+        if (!response.ok) {
+          throw new Error(
+            `Hyperspell add ${response.status}: ${(await response.text()).slice(0, 200)}`
+          );
+        }
       }
       return;
     } catch (error) {
@@ -56,7 +56,7 @@ export async function searchEvidence(
 ): Promise<{ chunks: { content: string; score?: number }[]; mode: AgentMode }> {
   if (hyperspellMode() === "live") {
     try {
-      const response = await fetch(`${HYPERSPELL_BASE}/v1/memories/search`, {
+      const response = await fetch(`${HYPERSPELL_BASE}/memories/query`, {
         method: "POST",
         headers: {
           authorization: `Bearer ${process.env.HYPERSPELL_API_KEY}`,
@@ -66,9 +66,15 @@ export async function searchEvidence(
       });
       if (response.ok) {
         const data = (await response.json()) as {
-          results?: { content: string; score?: number }[];
+          documents?: { text?: string; content?: string; score?: number }[];
         };
-        return { chunks: data.results ?? [], mode: "live" };
+        return {
+          chunks: (data.documents ?? []).map((d) => ({
+            content: String(d.text ?? d.content ?? ""),
+            score: d.score
+          })),
+          mode: "live"
+        };
       }
     } catch (error) {
       console.error("Hyperspell search failed, falling back to Mongo evidence", error);
