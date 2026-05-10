@@ -6,6 +6,7 @@ import {
   BarChart3,
   Crown,
   Heart,
+  LogOut,
   RotateCcw,
   Scale,
   Sparkles,
@@ -18,6 +19,13 @@ import {
 
 import { fallbackTeams, type TeamProfile } from "@/lib/teams";
 
+type Participant = {
+  id: string;
+  fullName: string;
+};
+
+type PickStatus = "idle" | "saving" | "saved" | "error";
+
 export default function Home() {
   const [allTeams, setAllTeams] = useState<TeamProfile[]>(fallbackTeams);
   const [round, setRound] = useState(1);
@@ -28,6 +36,11 @@ export default function Home() {
   const [winner, setWinner] = useState<TeamProfile | null>(null);
   const [direction, setDirection] = useState<"left" | "right" | null>(null);
   const [dataSource, setDataSource] = useState<"fallback" | "mongodb">("fallback");
+  const [participant, setParticipant] = useState<Participant | null>(null);
+  const [fullName, setFullName] = useState("");
+  const [loginStatus, setLoginStatus] = useState<"idle" | "saving">("idle");
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [pickStatus, setPickStatus] = useState<PickStatus>("idle");
 
   const active = roundTeams[index];
   const next = roundTeams[index + 1];
@@ -38,6 +51,18 @@ export default function Home() {
   );
 
   useEffect(() => {
+    const saved = window.localStorage.getItem("nozomio_participant");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved) as Participant;
+        if (parsed.id && parsed.fullName) {
+          setParticipant(parsed);
+        }
+      } catch {
+        window.localStorage.removeItem("nozomio_participant");
+      }
+    }
+
     let cancelled = false;
 
     async function loadTeams() {
@@ -68,6 +93,51 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!winner || !participant || pickStatus === "saving" || pickStatus === "saved") {
+      return;
+    }
+
+    let cancelled = false;
+    const pickedBy = participant;
+    const pickedWinner = winner;
+
+    async function savePick() {
+      setPickStatus("saving");
+      try {
+        const response = await fetch("/api/picks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            participantId: pickedBy.id,
+            fullName: pickedBy.fullName,
+            winnerTeamId: pickedWinner.id,
+            winnerTeamName: pickedWinner.name,
+            winnerScore: pickedWinner.winScore
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error("Could not save pick");
+        }
+
+        if (!cancelled) {
+          setPickStatus("saved");
+        }
+      } catch {
+        if (!cancelled) {
+          setPickStatus("error");
+        }
+      }
+    }
+
+    savePick();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [participant, pickStatus, winner]);
+
   function finishPick(nextSurvivors: TeamProfile[], nextEliminated: TeamProfile[]) {
     if (nextSurvivors.length === 1) {
       setWinner(nextSurvivors[0]);
@@ -92,7 +162,7 @@ export default function Home() {
   }
 
   function swipe(choice: "left" | "right") {
-    if (!active || direction) return;
+    if (!participant || !active || direction) return;
 
     setDirection(choice);
     window.setTimeout(() => {
@@ -121,6 +191,42 @@ export default function Home() {
     setEliminated([]);
     setWinner(null);
     setDirection(null);
+    setPickStatus("idle");
+  }
+
+  async function login(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoginStatus("saving");
+    setLoginError(null);
+
+    try {
+      const response = await fetch("/api/participants", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fullName })
+      });
+      const data = (await response.json()) as {
+        participant?: Participant;
+        error?: string;
+      };
+
+      if (!response.ok || !data.participant) {
+        throw new Error(data.error ?? "Could not create account");
+      }
+
+      setParticipant(data.participant);
+      setFullName("");
+      window.localStorage.setItem("nozomio_participant", JSON.stringify(data.participant));
+    } catch (error) {
+      setLoginError(error instanceof Error ? error.message : "Could not create account");
+    } finally {
+      setLoginStatus("idle");
+    }
+  }
+
+  function logout() {
+    setParticipant(null);
+    window.localStorage.removeItem("nozomio_participant");
   }
 
   return (
@@ -133,11 +239,46 @@ export default function Home() {
           </div>
           <h1>Swipe for the team you think wins.</h1>
         </div>
-        <button className="bankroll" onClick={() => reset()}>
-          <RotateCcw size={18} />
-          <span>Reset bracket</span>
-        </button>
+        <div className="topbar-actions">
+          {participant ? (
+            <div className="participant-chip">
+              <span>{participant.fullName}</span>
+              <button onClick={logout} aria-label="Log out">
+                <LogOut size={15} />
+              </button>
+            </div>
+          ) : (
+            <span className="signin-hint">Sign in to pick</span>
+          )}
+          <button className="bankroll" onClick={() => reset()}>
+            <RotateCcw size={18} />
+            <span>Reset bracket</span>
+          </button>
+        </div>
       </section>
+
+      {!participant && (
+        <section className="login-panel" aria-label="Create account">
+          <div>
+            <p className="eyebrow">Create account</p>
+            <h2>Enter your full name to pick the winner.</h2>
+          </div>
+          <form onSubmit={login}>
+            <input
+              type="text"
+              value={fullName}
+              onChange={(event) => setFullName(event.target.value)}
+              placeholder="Full name"
+              minLength={2}
+              required
+            />
+            <button className="primary-action" disabled={loginStatus === "saving"}>
+              {loginStatus === "saving" ? "Saving..." : "Start picking"}
+            </button>
+          </form>
+          {loginError && <p className="form-error">{loginError}</p>}
+        </section>
+      )}
 
       <section className="workspace">
         <aside className="panel left-panel" aria-label="Round status">
@@ -161,6 +302,7 @@ export default function Home() {
                 {leader?.name ?? "TBD"} leads this round at {leader?.winScore ?? 0}%.
               </span>
               <small>{dataSource === "mongodb" ? "MongoDB data" : "Mock fallback data"}</small>
+              {participant && <small>Picking as {participant.fullName}</small>}
             </div>
           </div>
         </aside>
@@ -168,7 +310,12 @@ export default function Home() {
         <section className="deck-area" aria-label="Team swipe deck">
           <div className="deck">
             {winner ? (
-              <WinnerCard team={winner} onReset={reset} />
+              <WinnerCard
+                participant={participant}
+                pickStatus={pickStatus}
+                team={winner}
+                onReset={reset}
+              />
             ) : (
               <>
                 {next && <TeamCard team={next} isBehind />}
@@ -182,7 +329,7 @@ export default function Home() {
               className="round-button pass"
               onClick={() => swipe("left")}
               aria-label="Pass on this team"
-              disabled={Boolean(winner)}
+              disabled={Boolean(winner) || !participant}
             >
               <X size={30} />
             </button>
@@ -190,11 +337,14 @@ export default function Home() {
               className="round-button like"
               onClick={() => swipe("right")}
               aria-label="Advance this team"
-              disabled={Boolean(winner)}
+              disabled={Boolean(winner) || !participant}
             >
               <Heart size={30} />
             </button>
           </div>
+          {!participant && (
+            <p className="deck-note">Create an account above to unlock swiping.</p>
+          )}
         </section>
 
         <aside className="panel right-panel" aria-label="Advanced teams">
@@ -322,7 +472,17 @@ function ScoreBar({
   );
 }
 
-function WinnerCard({ team, onReset }: { team: TeamProfile; onReset: () => void }) {
+function WinnerCard({
+  participant,
+  pickStatus,
+  team,
+  onReset
+}: {
+  participant: Participant | null;
+  pickStatus: PickStatus;
+  team: TeamProfile;
+  onReset: () => void;
+}) {
   return (
     <article className="empty-state winner-card" style={{ "--accent": team.color } as React.CSSProperties}>
       <Crown size={42} />
@@ -333,6 +493,14 @@ function WinnerCard({ team, onReset }: { team: TeamProfile; onReset: () => void 
         <Star size={18} />
         {team.winScore}% projected win likelihood
       </div>
+      {participant && (
+        <p className={`pick-status pick-${pickStatus}`}>
+          {pickStatus === "saving" && `Saving ${participant.fullName}'s pick...`}
+          {pickStatus === "saved" && `${participant.fullName}'s pick is saved.`}
+          {pickStatus === "error" && "Could not save this pick. Try again in a moment."}
+          {pickStatus === "idle" && "Preparing to save pick..."}
+        </p>
+      )}
       <button className="primary-action" onClick={onReset}>
         <RotateCcw size={18} />
         Run bracket again

@@ -107,6 +107,95 @@ h1 {
   background: #203632;
 }
 
+.topbar-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.participant-chip {
+  align-items: center;
+  background: #fffdf8;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  box-shadow: 0 8px 24px rgba(20, 20, 20, 0.08);
+  display: inline-flex;
+  gap: 8px;
+  padding: 8px 10px 8px 14px;
+}
+
+.participant-chip span {
+  font-size: 0.9rem;
+  font-weight: 800;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.participant-chip button {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 50%;
+  display: inline-flex;
+  height: 28px;
+  justify-content: center;
+  width: 28px;
+}
+
+.signin-hint {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.login-panel {
+  align-items: center;
+  background: rgba(255, 253, 248, 0.88);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 10px 36px rgba(20, 20, 20, 0.08);
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 420px);
+  margin: 0 auto 22px;
+  max-width: 1180px;
+  padding: 18px;
+}
+
+.login-panel h2 {
+  font-size: 1.25rem;
+  line-height: 1.2;
+}
+
+.login-panel form {
+  display: flex;
+  gap: 10px;
+}
+
+.login-panel input {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  flex: 1;
+  font: inherit;
+  min-width: 0;
+  padding: 12px 14px;
+}
+
+.login-panel input:focus {
+  border-color: rgba(255, 68, 88, 0.55);
+  box-shadow: 0 0 0 3px rgba(255, 68, 88, 0.15);
+  outline: none;
+}
+
+.login-panel .form-error {
+  grid-column: 1 / -1;
+}
+
 .workspace {
   display: grid;
   gap: 22px;
@@ -566,6 +655,39 @@ h1 {
   padding: 10px 14px;
 }
 
+.deck-note {
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 800;
+  margin-top: 10px;
+  text-align: center;
+}
+
+.pick-status {
+  border-radius: 999px;
+  font-size: 0.88rem;
+  font-weight: 900;
+  margin: 0 0 16px;
+  max-width: none;
+  padding: 9px 12px;
+}
+
+.pick-saving,
+.pick-idle {
+  background: rgba(34, 139, 230, 0.1);
+  color: #1971c2;
+}
+
+.pick-saved {
+  background: rgba(18, 184, 134, 0.12);
+  color: #0a8f6a;
+}
+
+.pick-error {
+  background: rgba(255, 68, 88, 0.12);
+  color: #b42335;
+}
+
 @media (max-width: 960px) {
   .workspace {
     grid-template-columns: minmax(0, 560px);
@@ -584,6 +706,18 @@ h1 {
 
   .topbar {
     align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .topbar-actions {
+    justify-content: flex-start;
+  }
+
+  .login-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .login-panel form {
     flex-direction: column;
   }
 
