@@ -42,6 +42,7 @@ export default function Home() {
   const [direction, setDirection] = useState<"left" | "right" | null>(null);
   const [dataSource, setDataSource] = useState<"fallback" | "mongodb">("fallback");
   const [participant, setParticipant] = useState<Participant | null>(null);
+  const [hydrated, setHydrated] = useState(false);
   const [fullName, setFullName] = useState("");
   const [loginStatus, setLoginStatus] = useState<"idle" | "saving">("idle");
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -69,6 +70,7 @@ export default function Home() {
         window.localStorage.removeItem("nozomio_participant");
       }
     }
+    setHydrated(true);
 
     let cancelled = false;
 
@@ -193,6 +195,10 @@ export default function Home() {
 
   function handlePointerDown(event: React.PointerEvent<HTMLElement>) {
     if (!participant || !active || direction) return;
+    if (event.target instanceof Element && event.target.closest("button, a")) {
+      return;
+    }
+
     const target = event.currentTarget;
     target.setPointerCapture(event.pointerId);
     dragStartRef.current = event.clientX;
@@ -286,39 +292,16 @@ export default function Home() {
           ) : (
             <span className="signin-hint">Sign in to pick</span>
           )}
-          <button className="bankroll" onClick={() => reset()}>
-            <RotateCcw size={18} />
-            <span>Reset bracket</span>
-          </button>
+          <a className="bankroll" href="/betting-dashboard">
+            <Trophy size={18} />
+            <span>Betting Dashboard</span>
+          </a>
           <a className="bankroll secondary" href="/agent-dashboard">
             <Award size={18} />
-            <span>Dashboard</span>
+            <span>How it works</span>
           </a>
         </div>
       </section>
-
-      {!participant && (
-        <section className="login-panel" aria-label="Create account">
-          <div>
-            <p className="eyebrow">Create account</p>
-            <h2>Enter your full name to pick the winner.</h2>
-          </div>
-          <form onSubmit={login}>
-            <input
-              type="text"
-              value={fullName}
-              onChange={(event) => setFullName(event.target.value)}
-              placeholder="Full name"
-              minLength={2}
-              required
-            />
-            <button className="primary-action" disabled={loginStatus === "saving"}>
-              {loginStatus === "saving" ? "Saving..." : "Start picking"}
-            </button>
-          </form>
-          {loginError && <p className="form-error">{loginError}</p>}
-        </section>
-      )}
 
       <section className="workspace">
         <aside className="panel left-panel" aria-label="Round status">
@@ -352,6 +335,10 @@ export default function Home() {
         </aside>
 
         <section className="deck-area" aria-label="Team swipe deck">
+          <div className="deck-meta" aria-label="Bracket progress">
+            <span>Card {winner ? roundTeams.length : Math.min(index + 1, roundTeams.length)} of {roundTeams.length}</span>
+            <strong>{participant ? "Drag or tap to pick" : "Sign in to unlock"}</strong>
+          </div>
           <div className="deck">
             {winner ? (
               <WinnerCard
@@ -424,6 +411,38 @@ export default function Home() {
           )}
         </aside>
       </section>
+
+      {hydrated && !participant && (
+        <div className="login-modal-backdrop" role="presentation">
+          <section
+            aria-labelledby="login-title"
+            aria-modal="true"
+            className="login-panel login-modal"
+            role="dialog"
+          >
+            <div>
+              <p className="eyebrow">Create account</p>
+              <h2 id="login-title">Enter your full name to pick the winner.</h2>
+              <p className="login-copy">Your pick is saved to the winner dashboard after the final swipe.</p>
+            </div>
+            <form onSubmit={login}>
+              <input
+                autoFocus
+                type="text"
+                value={fullName}
+                onChange={(event) => setFullName(event.target.value)}
+                placeholder="Full name"
+                minLength={2}
+                required
+              />
+              <button className="primary-action" disabled={loginStatus === "saving"}>
+                {loginStatus === "saving" ? "Saving..." : "Start picking"}
+              </button>
+            </form>
+            {loginError && <p className="form-error">{loginError}</p>}
+          </section>
+        </div>
+      )}
     </main>
   );
 }
@@ -451,6 +470,11 @@ function TeamCard({
 }) {
   const [expanded, setExpanded] = useState(false);
   const tags = inferTags(team);
+  const metrics = [
+    { id: "comp", label: "Competitiveness", value: team.likelihood.field },
+    { id: "judge", label: "Judge Likelihood", value: team.likelihood.judge },
+    { id: "market", label: "Marketability", value: team.likelihood.market }
+  ];
   const dragStyle: React.CSSProperties = isDragging
     ? {
         transform: `translateX(${dragX}px) rotate(${dragX / 24}deg)`,
@@ -476,6 +500,16 @@ function TeamCard({
     >
       <div className="photo-wrap">
         <img src={team.image} alt={`${team.name} team`} />
+        {!isBehind && (
+          <>
+            <div className="swipe-cue swipe-cue-pass" style={{ opacity: dragX < -20 ? Math.min(Math.abs(dragX) / 120, 1) : 0 }}>
+              Pass
+            </div>
+            <div className="swipe-cue swipe-cue-like" style={{ opacity: dragX > 20 ? Math.min(dragX / 120, 1) : 0 }}>
+              Advance
+            </div>
+          </>
+        )}
         <div className="odds-pill">
           <strong>{team.winScore}%</strong>
           <span>Win</span>
@@ -488,9 +522,14 @@ function TeamCard({
         </div>
 
         <div className="ring-row" aria-label={`${team.name} AI score breakdown`}>
-          <ScoreRing id={`${team.id}-comp`} label="Comp" value={team.likelihood.field} />
-          <ScoreRing id={`${team.id}-judge`} label="Judge" value={team.likelihood.judge} />
-          <ScoreRing id={`${team.id}-market`} label="Market" value={team.likelihood.market} />
+          {metrics.map((metric) => (
+            <ScoreRing
+              id={`${team.id}-${metric.id}`}
+              key={metric.id}
+              label={metric.label}
+              value={metric.value}
+            />
+          ))}
         </div>
 
         {!isBehind && (
@@ -570,16 +609,19 @@ function TeamCard({
               <ScoreBar
                 icon={<BarChart3 size={15} />}
                 label="Compared with other teams"
+                reason={team.likelihoodReasons?.field}
                 value={team.likelihood.field}
               />
               <ScoreBar
                 icon={<Scale size={15} />}
                 label="Aligned with judge needs"
+                reason={team.likelihoodReasons?.judge}
                 value={team.likelihood.judge}
               />
               <ScoreBar
                 icon={<Store size={15} />}
                 label="Real-world marketability"
+                reason={team.likelihoodReasons?.market}
                 value={team.likelihood.market}
               />
             </div>
@@ -626,17 +668,22 @@ function ScoreRing({ id, label, value }: { id: string; label: string; value: num
 function ScoreBar({
   icon,
   label,
+  reason,
   value
 }: {
   icon: React.ReactNode;
   label: string;
+  reason?: string;
   value: number;
 }) {
   return (
     <div className="score-row">
-      <div className="score-label">
-        {icon}
-        <span>{label}</span>
+      <div className="score-copy">
+        <div className="score-label">
+          {icon}
+          <span>{label}</span>
+        </div>
+        <p>{reason || fallbackReason(label, value)}</p>
       </div>
       <div className="score-track" aria-label={`${label}: ${value}%`}>
         <span style={{ width: `${value}%` }} />
@@ -644,6 +691,19 @@ function ScoreBar({
       <strong>{value}%</strong>
     </div>
   );
+}
+
+function fallbackReason(label: string, value: number) {
+  const band =
+    value >= 85 ? "strong" : value >= 70 ? "solid" : value >= 55 ? "emerging" : "early";
+
+  if (label.includes("other teams")) {
+    return `A ${band} relative score based on pitch clarity, traction signals, and field comparison.`;
+  }
+  if (label.includes("judge")) {
+    return `A ${band} judge-fit score based on alignment with stated judging priorities.`;
+  }
+  return `A ${band} market score based on demand, scale, differentiation, and deployment risk.`;
 }
 
 function WinnerCard({
@@ -686,6 +746,10 @@ function WinnerCard({
         <RotateCcw size={18} />
         Run bracket again
       </button>
+      <a className="primary-action secondary-link" href="/betting-dashboard">
+        <Trophy size={18} />
+        View betting dashboard
+      </a>
     </article>
   );
 }

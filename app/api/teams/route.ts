@@ -1,3 +1,6 @@
+import { promises as fs } from "fs";
+import path from "path";
+
 import { NextResponse } from "next/server";
 
 import { getMongoClient } from "@/lib/mongodb";
@@ -37,42 +40,47 @@ export async function GET() {
 
     const scoresByTeam = new Map(scores.map((s) => [String(s.teamId), s]));
 
-    const teams: TeamProfile[] = submissions.map((sub, idx) => {
-      const id = String(sub.publicId ?? sub.id ?? sub._id);
-      const score = scoresByTeam.get(id);
-      const color = COLOR_PALETTE[idx % COLOR_PALETTE.length];
+    const teams: TeamProfile[] = await Promise.all(
+      submissions.map(async (sub, idx) => {
+        const id = String(sub.publicId ?? sub.id ?? sub._id);
+        const score = scoresByTeam.get(id);
+        const color = COLOR_PALETTE[idx % COLOR_PALETTE.length];
 
-      const competitiveness = clamp01to10(score?.competitiveness);
-      const judgeFit = clamp01to10(score?.judgeFit);
-      const marketability = clamp01to10(score?.marketability);
-      const overall =
-        score?.overall != null
-          ? clampTo100(score.overall)
-          : Math.round(((competitiveness + judgeFit + marketability) / 3) * 10);
+        const competitiveness = clamp01to10(score?.competitiveness);
+        const judgeFit = clamp01to10(score?.judgeFit);
+        const marketability = clamp01to10(score?.marketability);
+        const overall =
+          score?.overall != null
+            ? clampTo100(score.overall)
+            : Math.round(((competitiveness + judgeFit + marketability) / 3) * 10);
 
-      const members = Array.isArray(sub.members) ? sub.members : [];
+        const members = Array.isArray(sub.members) ? sub.members : [];
 
-      return {
-        id,
-        name: String(sub.teamName ?? "Unnamed team"),
-        work: String(sub.projectDescription ?? ""),
-        winScore: overall,
-        likelihood: {
-          field: Math.round(competitiveness * 10),
-          judge: Math.round(judgeFit * 10),
-          market: Math.round(marketability * 10)
-        },
-        image:
-          (typeof score?.imageUrl === "string" && score.imageUrl) ||
-          PLACEHOLDER_IMAGE,
-        team: members.map((m: { name?: string; linkedin?: string }) => ({
-          name: m.name ?? "Teammate",
-          role: roleHint(sub),
-          linkedin: m.linkedin ?? "https://linkedin.com"
-        })),
-        color
-      };
-    });
+        return {
+          id,
+          name: String(sub.teamName ?? "Unnamed team"),
+          work: String(sub.projectDescription ?? ""),
+          winScore: overall,
+          likelihood: {
+            field: Math.round(competitiveness * 10),
+            judge: Math.round(judgeFit * 10),
+            market: Math.round(marketability * 10)
+          },
+          likelihoodReasons: {
+            field: readReason(score?.blurbs?.competitiveness),
+            judge: readReason(score?.blurbs?.judgeFit),
+            market: readReason(score?.blurbs?.marketability)
+          },
+          image: await resolveImage(score?.imageUrl),
+          team: members.map((m: { name?: string; linkedin?: string }) => ({
+            name: m.name ?? "Teammate",
+            role: roleHint(sub),
+            linkedin: m.linkedin ?? "https://linkedin.com"
+          })),
+          color
+        };
+      })
+    );
 
     teams.sort((a, b) => b.winScore - a.winScore);
 
@@ -84,6 +92,18 @@ export async function GET() {
   } catch (error) {
     console.error("Failed to load teams from submissions+scores", error);
     return NextResponse.json({ source: "fallback", teams: fallbackTeams });
+  }
+}
+
+async function resolveImage(imageUrl: unknown): Promise<string> {
+  if (typeof imageUrl !== "string" || !imageUrl) return PLACEHOLDER_IMAGE;
+  if (!imageUrl.startsWith("/")) return imageUrl; // external URL, trust it
+  const onDisk = path.join(process.cwd(), "public", imageUrl.replace(/^\//, ""));
+  try {
+    await fs.access(onDisk);
+    return imageUrl;
+  } catch {
+    return PLACEHOLDER_IMAGE;
   }
 }
 
@@ -103,6 +123,11 @@ function clampTo100(n: unknown): number {
   const x = Number(n);
   if (!Number.isFinite(x)) return 50;
   return Math.max(0, Math.min(100, Math.round(x)));
+}
+
+function readReason(value: unknown): string {
+  if (typeof value !== "string") return "";
+  return value.trim();
 }
 
 function getDbName(): string {

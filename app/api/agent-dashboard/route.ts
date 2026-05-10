@@ -27,7 +27,12 @@ export async function GET() {
   ];
 
   return NextResponse.json({
-    counts: { submissions, judges, scores: scores.length, evidence: evidence.length },
+    counts: {
+      submissions,
+      judges,
+      scores: scores.length,
+      evidence: evidence.length
+    },
     integrations,
     scores,
     evidence

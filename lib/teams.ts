@@ -14,6 +14,11 @@ export type TeamProfile = {
     judge: number;
     market: number;
   };
+  likelihoodReasons?: {
+    field: string;
+    judge: string;
+    market: string;
+  };
   image: string;
   team: Teammate[];
   color: string;

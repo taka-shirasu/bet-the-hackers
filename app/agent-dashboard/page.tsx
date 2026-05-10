@@ -329,6 +329,7 @@ export default function AgentDashboardPage() {
             )}
           </article>
         </section>
+
       </section>
     </main>
   );
