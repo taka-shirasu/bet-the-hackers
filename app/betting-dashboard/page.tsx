@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, Crown, Trophy, Users } from "lucide-react";
 
+import { safeJson } from "@/lib/http";
 import type { PickRecord, PicksPayload } from "@/lib/picks-server";
 
 type BettingDashboardData = {
@@ -34,7 +35,9 @@ export default function BettingDashboardPage() {
     try {
       const response = await fetch("/api/betting-dashboard", { cache: "no-store" });
       if (!response.ok) throw new Error("Failed to load betting dashboard");
-      setData((await response.json()) as BettingDashboardData);
+      const json = await safeJson<BettingDashboardData>(response);
+      if (!json) throw new Error("Betting dashboard returned no data");
+      setData(json);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load betting dashboard");

@@ -22,6 +22,7 @@ import {
   X
 } from "lucide-react";
 
+import { safeJson } from "@/lib/http";
 import { fallbackTeams, type TeamProfile } from "@/lib/teams";
 
 type Participant = {
@@ -81,12 +82,12 @@ export default function Home() {
           throw new Error("Could not load teams");
         }
 
-        const data = (await response.json()) as {
+        const data = await safeJson<{
           teams?: TeamProfile[];
           source?: "fallback" | "mongodb";
-        };
+        }>(response);
 
-        if (!cancelled && data.teams?.length) {
+        if (!cancelled && data?.teams?.length) {
           setDataSource(data.source === "mongodb" ? "mongodb" : "fallback");
           reset(data.teams);
         }
@@ -247,13 +248,13 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ fullName })
       });
-      const data = (await response.json()) as {
+      const data = await safeJson<{
         participant?: Participant;
         error?: string;
-      };
+      }>(response);
 
-      if (!response.ok || !data.participant) {
-        throw new Error(data.error ?? "Could not create account");
+      if (!response.ok || !data?.participant) {
+        throw new Error(data?.error ?? "Could not create account");
       }
 
       setParticipant(data.participant);

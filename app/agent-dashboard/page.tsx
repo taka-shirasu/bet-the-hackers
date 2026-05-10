@@ -25,6 +25,7 @@ import type {
   IntegrationStatus,
   TeamScore
 } from "@/lib/agents/types";
+import { safeJson } from "@/lib/http";
 
 type DashboardData = {
   counts: { submissions: number; judges: number; scores: number; evidence: number };
@@ -74,7 +75,8 @@ export default function AgentDashboardPage() {
   const refresh = useCallback(async () => {
     try {
       const r = await fetch("/api/agent-dashboard", { cache: "no-store" });
-      const json = (await r.json()) as DashboardData;
+      const json = await safeJson<DashboardData>(r);
+      if (!json) throw new Error("Agent dashboard returned no data");
       setData(json);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load");
@@ -229,8 +231,8 @@ export default function AgentDashboardPage() {
     try {
       const r = await fetch("/api/score/all", { method: "POST" });
       if (!r.ok) {
-        const e = (await r.json()) as { error?: string };
-        throw new Error(e.error ?? "Scoring failed");
+        const e = await safeJson<{ error?: string }>(r);
+        throw new Error(e?.error ?? "Scoring failed");
       }
       await refresh();
     } catch (err) {
@@ -240,13 +242,18 @@ export default function AgentDashboardPage() {
     }
   }
 
-  if (!data) {
-    return (
-      <main className="shell">
-        <p className="muted">Loading agent knowledge graph...</p>
-      </main>
-    );
-  }
+  const safeData: DashboardData = data ?? {
+    counts: { submissions: 0, judges: 0, scores: 0, evidence: 0 },
+    integrations: [
+      { name: "apify", configured: false, mode: "stub", envVar: "APIFY_TOKEN" },
+      { name: "nia", configured: false, mode: "stub", envVar: "NIA_API_KEY" },
+      { name: "hyperspell", configured: false, mode: "stub", envVar: "HYPERSPELL_API_KEY" },
+      { name: "openai", configured: false, mode: "stub", envVar: "OPENAI_API_KEY" }
+    ],
+    scores: [],
+    evidence: []
+  };
+  const dataReady = data !== null;
 
   return (
     <main className="shell">
@@ -275,10 +282,10 @@ export default function AgentDashboardPage() {
         </section>
 
         <section className="agent-legend" aria-label="Integration status">
-          <IntegrationTile i={find(data.integrations, "apify")} label="Apify scrapes LinkedIn/profile and market pages." />
-          <IntegrationTile i={find(data.integrations, "nia")} label="Nia researches judges, markets, competitors, and optional repos." />
-          <IntegrationTile i={find(data.integrations, "hyperspell")} label="Hyperspell stores the evidence agents read and write." />
-          <IntegrationTile i={find(data.integrations, "openai")} label="OpenAI turns evidence into structured scoring outputs." />
+          <IntegrationTile i={find(safeData.integrations, "apify")} label="Apify scrapes LinkedIn/profile and market pages." />
+          <IntegrationTile i={find(safeData.integrations, "nia")} label="Nia researches judges, markets, competitors, and optional repos." />
+          <IntegrationTile i={find(safeData.integrations, "hyperspell")} label="Hyperspell stores the evidence agents read and write." />
+          <IntegrationTile i={find(safeData.integrations, "openai")} label="OpenAI turns evidence into structured scoring outputs." />
         </section>
 
         <section className="agent-grid">
@@ -301,11 +308,13 @@ export default function AgentDashboardPage() {
         <section className="agent-grid">
           <article className="agent-panel">
             <h2>Latest scores</h2>
-            {data.scores.length === 0 ? (
+            {!dataReady ? (
+              <p className="muted">Loading…</p>
+            ) : safeData.scores.length === 0 ? (
               <p className="muted">No scored teams yet.</p>
             ) : (
               <div className="mini-score-list">
-                {data.scores.slice(0, 5).map((score) => (
+                {safeData.scores.slice(0, 5).map((score) => (
                   <div className="mini-score" key={score.teamId}>
                     <strong>{score.teamName}</strong>
                     <span>{score.overall}/100</span>
@@ -317,11 +326,13 @@ export default function AgentDashboardPage() {
 
           <article className="agent-panel">
             <h2>Recent evidence</h2>
-            {data.evidence.length === 0 ? (
+            {!dataReady ? (
+              <p className="muted">Loading…</p>
+            ) : safeData.evidence.length === 0 ? (
               <p className="muted">No evidence stored yet. Run scoring after submissions arrive.</p>
             ) : (
               <div className="mini-evidence-list">
-                {data.evidence.slice(0, 4).map((e, index) => (
+                {safeData.evidence.slice(0, 4).map((e, index) => (
                   <div className="mini-evidence" key={`${e.namespace}-${index}`}>
                     <strong>{e.namespace}</strong>
                     <span>{e.source}</span>

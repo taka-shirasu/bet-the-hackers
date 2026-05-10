@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CheckCircle2, Plus, Send, Trash2 } from "lucide-react";
 
+import { safeJson } from "@/lib/http";
 import { TRACKS } from "@/lib/submissions";
 
 type Member = { name: string; linkedin: string };
@@ -56,9 +57,9 @@ export default function SubmitPage() {
         })
       });
 
-      const data = (await response.json()) as { error?: string; ok?: boolean };
-      if (!response.ok || !data.ok) {
-        throw new Error(data.error ?? "Submission failed");
+      const data = await safeJson<{ error?: string; ok?: boolean }>(response);
+      if (!response.ok || !data?.ok) {
+        throw new Error(data?.error ?? "Submission failed");
       }
       setStatus("done");
     } catch (err) {

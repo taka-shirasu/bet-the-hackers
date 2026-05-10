@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { CheckCircle2, Plus, Send, Trash2 } from "lucide-react";
 
+import { safeJson } from "@/lib/http";
+
 type JudgeRow = { name: string; company: string; linkedin: string };
 
 const blankJudge = (): JudgeRow => ({ name: "", company: "", linkedin: "" });
@@ -53,13 +55,13 @@ export default function HackathonJudgeForm() {
         })
       });
 
-      const data = (await response.json()) as {
+      const data = await safeJson<{
         error?: string;
         ok?: boolean;
         count?: number;
-      };
-      if (!response.ok || !data.ok) {
-        throw new Error(data.error ?? "Submission failed");
+      }>(response);
+      if (!response.ok || !data?.ok) {
+        throw new Error(data?.error ?? "Submission failed");
       }
       setSavedCount(data.count ?? cleanJudges.length);
       setStatus("done");
