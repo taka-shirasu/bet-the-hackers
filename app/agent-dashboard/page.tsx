@@ -12,7 +12,6 @@ import {
   FileSearch,
   Globe,
   Network,
-  Play,
   Search,
   Sparkles,
   Target,
@@ -69,7 +68,6 @@ const edges = [
 
 export default function AgentDashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
-  const [scoring, setScoring] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
@@ -225,23 +223,6 @@ export default function AgentDashboardPage() {
     [data]
   );
 
-  async function runScoreAll() {
-    setScoring(true);
-    setError(null);
-    try {
-      const r = await fetch("/api/score/all", { method: "POST" });
-      if (!r.ok) {
-        const e = await safeJson<{ error?: string }>(r);
-        throw new Error(e?.error ?? "Scoring failed");
-      }
-      await refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Scoring failed");
-    } finally {
-      setScoring(false);
-    }
-  }
-
   const safeData: DashboardData = data ?? {
     counts: { submissions: 0, judges: 0, scores: 0, evidence: 0 },
     integrations: [
@@ -267,12 +248,6 @@ export default function AgentDashboardPage() {
             <p className="eyebrow">Agent knowledge graph</p>
             <h1>How evidence becomes a winner prediction.</h1>
           </div>
-          {process.env.NODE_ENV !== "production" && (
-            <button className="primary-action" onClick={runScoreAll} disabled={scoring}>
-              <Play size={18} />
-              {scoring ? "Scoring..." : "Score all teams"}
-            </button>
-          )}
         </header>
 
         {error && <p className="form-error">{error}</p>}
