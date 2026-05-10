@@ -451,30 +451,16 @@ export default function Home() {
     setSurvivors(nextSurvivors);
     setEliminated(nextEliminated);
 
-    if (round === 1) {
-      setShowBetScreen(true);
-    } else {
-      // Round 2: skip betting, go straight to leaderboard
-      setShowLeaderboard(true);
-    }
+    setShowBetScreen(true);
   }
 
   function advanceToNextRound() {
     setShowLeaderboard(false);
 
-    if (round === 1) {
-      // Round 1 winner stays in the pool for Round 2
-      setRound(2);
-      setRoundTeams(survivors);
-      setIndex(0);
-      setSurvivors([]);
-      setEliminated([]);
-    } else {
-      // Round 2 done — winner is the top-scoring survivor
-      const r2Winner = [...survivors].sort((a, b) => b.winScore - a.winScore)[0];
-      if (r2Winner) {
-        setWinner(r2Winner);
-      }
+    // Single round — pick the top-scoring survivor as winner
+    const finalWinner = [...survivors].sort((a, b) => b.winScore - a.winScore)[0];
+    if (finalWinner) {
+      setWinner(finalWinner);
     }
   }
 
@@ -1191,7 +1177,7 @@ function LeaderboardOverlay({
         <div className="leaderboard-header">
           <Award size={24} />
           <p className="eyebrow" style={{ color: "#fff", marginBottom: 0 }}>
-            Round {round} Complete
+            Voting Complete
           </p>
           <h2>Leaderboard</h2>
           <p>{portfolio.bets.length} bet{portfolio.bets.length !== 1 ? "s" : ""} placed</p>
@@ -1233,7 +1219,7 @@ function LeaderboardOverlay({
 
         <button className="primary-action leaderboard-next" onClick={onNext}>
           <ArrowRight size={18} />
-          {round === 1 ? "Continue to Round 2" : "See final results"}
+          See final results
         </button>
       </div>
     </div>
