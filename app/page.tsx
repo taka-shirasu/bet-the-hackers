@@ -1,9 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
+  Award,
   BarChart3,
+  BadgeCheck,
+  Brain,
+  Coins,
   Crown,
   Heart,
   LogOut,
@@ -12,6 +16,7 @@ import {
   Sparkles,
   Star,
   Store,
+  TrendingUp,
   Trophy,
   Users,
   X
@@ -41,6 +46,8 @@ export default function Home() {
   const [loginStatus, setLoginStatus] = useState<"idle" | "saving">("idle");
   const [loginError, setLoginError] = useState<string | null>(null);
   const [pickStatus, setPickStatus] = useState<PickStatus>("idle");
+  const [dragX, setDragX] = useState(0);
+  const dragStartRef = useRef<number | null>(null);
 
   const active = roundTeams[index];
   const next = roundTeams[index + 1];
@@ -182,6 +189,35 @@ export default function Home() {
     }, 250);
   }
 
+  const SWIPE_THRESHOLD = 110;
+
+  function handlePointerDown(event: React.PointerEvent<HTMLElement>) {
+    if (!participant || !active || direction) return;
+    const target = event.currentTarget;
+    target.setPointerCapture(event.pointerId);
+    dragStartRef.current = event.clientX;
+    setDragX(0);
+  }
+
+  function handlePointerMove(event: React.PointerEvent<HTMLElement>) {
+    if (dragStartRef.current === null || direction) return;
+    setDragX(event.clientX - dragStartRef.current);
+  }
+
+  function handlePointerUp(event: React.PointerEvent<HTMLElement>) {
+    if (dragStartRef.current === null) return;
+    const target = event.currentTarget;
+    if (target.hasPointerCapture(event.pointerId)) {
+      target.releasePointerCapture(event.pointerId);
+    }
+    const finalX = dragX;
+    dragStartRef.current = null;
+    setDragX(0);
+    if (Math.abs(finalX) > SWIPE_THRESHOLD) {
+      swipe(finalX > 0 ? "right" : "left");
+    }
+  }
+
   function reset(nextTeams = allTeams) {
     setAllTeams(nextTeams);
     setRound(1);
@@ -254,6 +290,10 @@ export default function Home() {
             <RotateCcw size={18} />
             <span>Reset bracket</span>
           </button>
+          <a className="bankroll secondary" href="/agent-dashboard">
+            <Award size={18} />
+            <span>Dashboard</span>
+          </a>
         </div>
       </section>
 
@@ -291,6 +331,10 @@ export default function Home() {
             <strong>{totalRemaining}</strong>
           </div>
           <div className="metric hot">
+            <span>Credits</span>
+            <strong>1k</strong>
+          </div>
+          <div className="metric">
             <span>Advanced</span>
             <strong>{survivors.length}</strong>
           </div>
@@ -319,7 +363,18 @@ export default function Home() {
             ) : (
               <>
                 {next && <TeamCard team={next} isBehind />}
-                {active && <TeamCard team={active} direction={direction} />}
+                {active && (
+                  <TeamCard
+                    team={active}
+                    direction={direction}
+                    dragX={dragStartRef.current !== null ? dragX : 0}
+                    isDragging={dragStartRef.current !== null}
+                    onPointerDown={handlePointerDown}
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={handlePointerUp}
+                    onPointerCancel={handlePointerUp}
+                  />
+                )}
               </>
             )}
           </div>
@@ -350,10 +405,10 @@ export default function Home() {
         <aside className="panel right-panel" aria-label="Advanced teams">
           <div className="panel-heading">
             <Sparkles size={18} />
-            <h2>Next round</h2>
+            <h2>Portfolio</h2>
           </div>
           {survivors.length === 0 ? (
-            <p className="muted">Swipe right on teams you believe can win. Survivors collect here.</p>
+            <p className="muted">Swipe right on teams you believe can win. Your 1,000 credits lock on the final winner pick.</p>
           ) : (
             <div className="ticket-list">
               {survivors.map((team) => (
@@ -361,7 +416,7 @@ export default function Home() {
                   <span style={{ backgroundColor: team.color }} />
                   <div>
                     <strong>{team.name}</strong>
-                    <small>{team.winScore}% win likelihood</small>
+                    <small>Potential finalist · {team.winScore}% win likelihood</small>
                   </div>
                 </article>
               ))}
@@ -376,76 +431,195 @@ export default function Home() {
 function TeamCard({
   team,
   isBehind = false,
-  direction = null
+  direction = null,
+  dragX = 0,
+  isDragging = false,
+  onPointerDown,
+  onPointerMove,
+  onPointerUp,
+  onPointerCancel
 }: {
   team: TeamProfile;
   isBehind?: boolean;
   direction?: "left" | "right" | null;
+  dragX?: number;
+  isDragging?: boolean;
+  onPointerDown?: (e: React.PointerEvent<HTMLElement>) => void;
+  onPointerMove?: (e: React.PointerEvent<HTMLElement>) => void;
+  onPointerUp?: (e: React.PointerEvent<HTMLElement>) => void;
+  onPointerCancel?: (e: React.PointerEvent<HTMLElement>) => void;
 }) {
+  const [expanded, setExpanded] = useState(false);
+  const tags = inferTags(team);
+  const dragStyle: React.CSSProperties = isDragging
+    ? {
+        transform: `translateX(${dragX}px) rotate(${dragX / 24}deg)`,
+        transition: "none",
+        cursor: "grabbing"
+      }
+    : {};
+
   return (
     <article
       className={[
         "bet-card",
+        expanded ? "is-expanded" : "",
         isBehind ? "is-behind" : "",
-        direction ? `swipe-${direction}` : ""
+        direction ? `swipe-${direction}` : "",
+        onPointerDown ? "is-draggable" : ""
       ].join(" ")}
-      style={{ "--accent": team.color } as React.CSSProperties}
+      style={{ "--accent": team.color, ...dragStyle } as React.CSSProperties}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerCancel}
     >
       <div className="photo-wrap">
         <img src={team.image} alt={`${team.name} team`} />
-        <div className="odds-pill">{team.winScore}%</div>
+        <div className="odds-pill">
+          <strong>{team.winScore}%</strong>
+          <span>Win</span>
+        </div>
       </div>
       <div className="card-body">
-        <div className="identity">
-          <div>
-            <h2>{team.name}</h2>
-            <p>Hackathon team</p>
-          </div>
-          <span>{team.winScore}%</span>
-        </div>
-
-        <div className="profile-section">
-          <span>What they work on</span>
+        <div className="identity compact">
+          <h2>{team.name}</h2>
           <p>{team.work}</p>
         </div>
 
-        <div className="team-list">
-          <div className="team-title">
-            <Users size={16} />
-            <strong>Who's behind it</strong>
-          </div>
-          {team.team.map((member) => (
-            <a href={member.linkedin} key={member.name} target="_blank" rel="noreferrer">
-              <span>{member.name}</span>
-              <small>{member.role}</small>
-              <ArrowRight size={14} />
-            </a>
-          ))}
+        <div className="ring-row" aria-label={`${team.name} AI score breakdown`}>
+          <ScoreRing id={`${team.id}-comp`} label="Comp" value={team.likelihood.field} />
+          <ScoreRing id={`${team.id}-judge`} label="Judge" value={team.likelihood.judge} />
+          <ScoreRing id={`${team.id}-market`} label="Market" value={team.likelihood.market} />
         </div>
 
-        <div className="likelihood-panel">
-          <div className="likelihood-head">
-            <span>Likelihood of winning</span>
-            <strong>{team.winScore}%</strong>
+        {!isBehind && (
+          <button className="detail-toggle" onClick={() => setExpanded((current) => !current)}>
+            {expanded ? (
+              <>
+                <X size={15} />
+                Back
+              </>
+            ) : (
+              "View details"
+            )}
+          </button>
+        )}
+
+        {expanded && !isBehind && (
+          <div className="expanded-details">
+            <div className="judge-fit-pill">
+              <BadgeCheck size={16} />
+              {team.likelihood.judge}% judge fit
+            </div>
+
+            <section className="detail-block">
+              <div className="detail-title">
+                <Brain size={16} />
+                <span>What they work on</span>
+              </div>
+              <p>{team.work}</p>
+            </section>
+
+            <div className="tag-row">
+              {tags.map((tag) => (
+                <span key={tag}>{tag}</span>
+              ))}
+            </div>
+
+            <div className="proof-grid">
+              <div className="proof-card">
+                <Coins size={16} />
+                <strong>{Math.round(team.winScore * 11.7)}</strong>
+                <span>credits backing</span>
+              </div>
+              <div className="proof-card">
+                <TrendingUp size={16} />
+                <strong>Top {rankBand(team.winScore)}</strong>
+                <span>field signal</span>
+              </div>
+            </div>
+
+            <div className="nia-insight">
+              <Sparkles size={16} />
+              <p>
+                Nia signal: strongest path is judge alignment plus a market story that can
+                scale beyond demo day.
+              </p>
+            </div>
+
+            <div className="team-list">
+              <div className="team-title">
+                <Users size={16} />
+                <strong>Who's behind it</strong>
+              </div>
+              {team.team.map((member) => (
+                <a href={member.linkedin} key={member.name} target="_blank" rel="noreferrer">
+                  <span>{member.name}</span>
+                  <small>{member.role}</small>
+                  <ArrowRight size={14} />
+                </a>
+              ))}
+            </div>
+
+            <div className="likelihood-panel">
+              <div className="likelihood-head">
+                <span>Likelihood of winning</span>
+                <strong>{team.winScore}%</strong>
+              </div>
+              <ScoreBar
+                icon={<BarChart3 size={15} />}
+                label="Compared with other teams"
+                value={team.likelihood.field}
+              />
+              <ScoreBar
+                icon={<Scale size={15} />}
+                label="Aligned with judge needs"
+                value={team.likelihood.judge}
+              />
+              <ScoreBar
+                icon={<Store size={15} />}
+                label="Real-world marketability"
+                value={team.likelihood.market}
+              />
+            </div>
           </div>
-          <ScoreBar
-            icon={<BarChart3 size={15} />}
-            label="Compared with other teams"
-            value={team.likelihood.field}
-          />
-          <ScoreBar
-            icon={<Scale size={15} />}
-            label="Aligned with judge needs"
-            value={team.likelihood.judge}
-          />
-          <ScoreBar
-            icon={<Store size={15} />}
-            label="Real-world marketability"
-            value={team.likelihood.market}
-          />
-        </div>
+        )}
       </div>
     </article>
+  );
+}
+
+function ScoreRing({ id, label, value }: { id: string; label: string; value: number }) {
+  const radius = 30;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (circumference * value) / 100;
+  const gradientId = `ring-${id.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
+
+  return (
+    <div className="score-ring">
+      <svg viewBox="0 0 80 80" aria-hidden="true">
+        <defs>
+          <linearGradient id={gradientId} x1="0" x2="1" y1="0" y2="1">
+            <stop offset="0%" stopColor="#ef4444" />
+            <stop offset="52%" stopColor="#f59e0b" />
+            <stop offset="100%" stopColor="#22c55e" />
+          </linearGradient>
+        </defs>
+        <circle className="ring-track" cx="40" cy="40" r={radius} />
+        <circle
+          className="ring-fill"
+          cx="40"
+          cy="40"
+          r={radius}
+          stroke={`url(#${gradientId})`}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+        />
+      </svg>
+      <strong>{value}%</strong>
+      <span>{label}</span>
+    </div>
   );
 }
 
@@ -493,6 +667,13 @@ function WinnerCard({
         <Star size={18} />
         {team.winScore}% projected win likelihood
       </div>
+      <div className="payout-card">
+        <Coins size={18} />
+        <div>
+          <strong>1,000 credits locked</strong>
+          <span>Voting complete. Pick saved as your winner bet.</span>
+        </div>
+      </div>
       {participant && (
         <p className={`pick-status pick-${pickStatus}`}>
           {pickStatus === "saving" && `Saving ${participant.fullName}'s pick...`}
@@ -507,4 +688,21 @@ function WinnerCard({
       </button>
     </article>
   );
+}
+
+function inferTags(team: TeamProfile) {
+  const text = `${team.name} ${team.work}`.toLowerCase();
+  const tags = [
+    text.includes("agent") || text.includes("assistant") ? "AI agents" : "AI product",
+    text.includes("market") || text.includes("store") || text.includes("cart") ? "Commerce" : "Workflow",
+    team.likelihood.market >= 85 ? "High-market" : "Demo-ready"
+  ];
+
+  return Array.from(new Set(tags));
+}
+
+function rankBand(score: number) {
+  if (score >= 86) return "10%";
+  if (score >= 78) return "25%";
+  return "50%";
 }
