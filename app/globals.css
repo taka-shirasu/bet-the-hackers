@@ -183,12 +183,12 @@ h1 {
   background: linear-gradient(to bottom, #ffffff 0%, #f0b07a 40%, #e8915a 70%, #e8915a 100%);
   border-radius: 14px;
   padding: 10px;
+  overflow: hidden;
 }
 
 .bet-card,
 .empty-state {
   background: var(--panel);
-  border: 1px solid rgba(20, 20, 20, 0.14);
   border-radius: 8px;
   box-shadow: var(--shadow);
   inset: 12px;
@@ -198,7 +198,7 @@ h1 {
 
 .bet-card {
   background: var(--panel);
-  box-shadow: var(--shadow);
+  border: none;
   display: flex;
   flex-direction: column;
   transform-origin: 50% 90%;
