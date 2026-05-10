@@ -180,6 +180,9 @@ h1 {
   min-height: 650px;
   position: relative;
   width: min(100%, 500px);
+  background: linear-gradient(to bottom, #ffffff 0%, #f5c28a 50%, #e8915a 100%);
+  border-radius: 14px;
+  padding: 10px;
 }
 
 .bet-card,
@@ -195,7 +198,7 @@ h1 {
 
 .bet-card {
   background: var(--panel);
-  box-shadow: 0 0 0 10px #e8915a, 0 0 20px rgba(232, 145, 90, 0.3);
+  box-shadow: var(--shadow);
   display: flex;
   flex-direction: column;
   transform-origin: 50% 90%;
