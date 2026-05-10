@@ -260,10 +260,12 @@ export default function AgentDashboardPage() {
             <p className="eyebrow">Agent knowledge graph</p>
             <h1>How evidence becomes a winner prediction.</h1>
           </div>
-          <button className="primary-action" onClick={runScoreAll} disabled={scoring}>
-            <Play size={18} />
-            {scoring ? "Scoring..." : "Score all teams"}
-          </button>
+          {process.env.NODE_ENV !== "production" && (
+            <button className="primary-action" onClick={runScoreAll} disabled={scoring}>
+              <Play size={18} />
+              {scoring ? "Scoring..." : "Score all teams"}
+            </button>
+          )}
         </header>
 
         {error && <p className="form-error">{error}</p>}
