@@ -271,6 +271,52 @@ export default function Home() {
     window.localStorage.removeItem("nozomio_participant");
   }
 
+  if (!hydrated) {
+    return <main className="shell" />;
+  }
+
+  if (!participant) {
+    return (
+      <main className="shell login-only-shell">
+        <section className="login-gate-brand">
+          <div className="brand-mark" aria-label="nozomio">
+            <img src="/nozomio-logo.png" alt="" />
+            <span>nozomio</span>
+          </div>
+        </section>
+        <section
+          aria-labelledby="login-title"
+          aria-modal="true"
+          className="login-panel login-modal"
+          role="dialog"
+        >
+          <div>
+            <p className="eyebrow">Create account</p>
+            <h2 id="login-title">Enter your full name to pick the winner.</h2>
+            <p className="login-copy">
+              Your pick is saved to the winner dashboard after the final swipe.
+            </p>
+          </div>
+          <form onSubmit={login}>
+            <input
+              autoFocus
+              type="text"
+              value={fullName}
+              onChange={(event) => setFullName(event.target.value)}
+              placeholder="Full name"
+              minLength={2}
+              required
+            />
+            <button className="primary-action" disabled={loginStatus === "saving"}>
+              {loginStatus === "saving" ? "Saving..." : "Start picking"}
+            </button>
+          </form>
+          {loginError && <p className="form-error">{loginError}</p>}
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="shell">
       <section className="topbar" aria-label="Hackathon team picker">
@@ -412,37 +458,6 @@ export default function Home() {
         </aside>
       </section>
 
-      {hydrated && !participant && (
-        <div className="login-modal-backdrop" role="presentation">
-          <section
-            aria-labelledby="login-title"
-            aria-modal="true"
-            className="login-panel login-modal"
-            role="dialog"
-          >
-            <div>
-              <p className="eyebrow">Create account</p>
-              <h2 id="login-title">Enter your full name to pick the winner.</h2>
-              <p className="login-copy">Your pick is saved to the winner dashboard after the final swipe.</p>
-            </div>
-            <form onSubmit={login}>
-              <input
-                autoFocus
-                type="text"
-                value={fullName}
-                onChange={(event) => setFullName(event.target.value)}
-                placeholder="Full name"
-                minLength={2}
-                required
-              />
-              <button className="primary-action" disabled={loginStatus === "saving"}>
-                {loginStatus === "saving" ? "Saving..." : "Start picking"}
-              </button>
-            </form>
-            {loginError && <p className="form-error">{loginError}</p>}
-          </section>
-        </div>
-      )}
     </main>
   );
 }

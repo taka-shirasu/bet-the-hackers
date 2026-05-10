@@ -2285,3 +2285,23 @@ h1 {
     grid-template-columns: 1fr;
   }
 }
+
+.login-only-shell {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 28px;
+}
+
+.login-gate-brand {
+  text-align: center;
+}
+
+.login-only-shell .login-panel {
+  margin: 0;
+  max-width: 560px;
+  width: 100%;
+}

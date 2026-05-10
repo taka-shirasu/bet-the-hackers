@@ -8,4 +8,3 @@ yarn-debug.log*
 yarn-error.log*
 .DS_Store
 data/
-public/team-images/
